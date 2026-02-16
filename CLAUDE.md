@@ -224,6 +224,26 @@ Database tests use in-memory SQLite (`:memory:`). Console tests use `httptest.Ne
 
 Keep dependencies minimal. Use stdlib where possible (`net/http`, `log/slog`, `encoding/json`, `embed`).
 
+## Releasing
+
+Releases are automated via GitHub Actions (`.github/workflows/release.yml`).
+
+### Trigger a release
+
+```bash
+git tag v0.2.0
+git push --tags
+```
+
+The workflow will:
+1. Build 4 binaries (darwin/linux × arm64/amd64) via `make release`
+2. Create a GitHub release with the binaries attached
+3. Dispatch a `repository_dispatch` event to `yepzdk/homebrew-tools` to update the Homebrew formula
+
+### Required secret
+
+`HOMEBREW_TAP_TOKEN` — a GitHub Personal Access Token (PAT) with `repo` scope, stored in the repository's Settings → Secrets. Used to trigger the Homebrew tap update via the GitHub API.
+
 ## Common Tasks
 
 ### Add a new CLI command

@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build binaries
+        run: make release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            bin/picky-darwin-arm64
+            bin/picky-darwin-amd64
+            bin/picky-linux-arm64
+            bin/picky-linux-amd64
+          generate_release_notes: true
+
+      - name: Update Homebrew formula
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: token $HOMEBREW_TAP_TOKEN" \
+            https://api.github.com/repos/yepzdk/homebrew-tools/dispatches \
+            -d "{\"event_type\":\"update-picky\",\"client_payload\":{\"version\":\"${GITHUB_REF_NAME#v}\"}}"
