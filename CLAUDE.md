@@ -255,24 +255,18 @@ This applies to both humans and AI agents (Claude Code). Always work in a featur
 
 ## Releasing
 
-Releases are fully automated via two GitHub Actions workflows:
+Releases are fully automated via a single GitHub Actions workflow (`.github/workflows/release.yml`).
 
-### Auto-tagging (`.github/workflows/auto-tag.yml`)
-
-On every push to `main` (i.e., PR merge), the auto-tag workflow:
+On every push to `main` (i.e., PR merge), the workflow:
 1. Finds the latest `v*` tag
 2. Analyzes commit messages since that tag using Conventional Commits:
    - `feat!:` or `BREAKING CHANGE:` → **major** bump
    - `feat:` → **minor** bump
    - Everything else → **patch** bump
 3. Creates and pushes the new tag (e.g., `v0.3.0` → `v0.3.1`)
-
-### Release build (`.github/workflows/release.yml`)
-
-Triggered by the new tag push, this workflow:
-1. Builds 4 binaries (darwin/linux × arm64/amd64) via `make release`
-2. Creates a GitHub release with the binaries attached
-3. Dispatches a `repository_dispatch` event to `yepzdk/homebrew-tools` to update the Homebrew formula
+4. Builds 4 binaries (darwin/linux × arm64/amd64) via `make release`
+5. Creates a GitHub release with the binaries attached
+6. Dispatches a `repository_dispatch` event to `yepzdk/homebrew-tools` to update the Homebrew formula
 
 ### Manual tagging
 
