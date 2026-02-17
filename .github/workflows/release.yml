@@ -1,31 +1,106 @@
-name: Release
+name: Auto Tag and Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+    tags-ignore:
+      - '*'
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  auto-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          # Get the latest version tag
+          LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -1)
+          if [ -z "$LATEST_TAG" ]; then
+            echo "new_tag=v0.1.0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Latest tag: $LATEST_TAG"
+
+          # Strip the 'v' prefix and split into parts
+          VERSION="${LATEST_TAG#v}"
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+
+          # Get commits since last tag
+          COMMITS=$(git log "$LATEST_TAG"..HEAD --pretty=format:"%s" --no-merges)
+
+          if [ -z "$COMMITS" ]; then
+            echo "No new commits since $LATEST_TAG, skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Commits since $LATEST_TAG:"
+          echo "$COMMITS"
+
+          # Determine bump type from conventional commits
+          BUMP="patch"
+          if echo "$COMMITS" | grep -qiE "^(feat|feature)(\(.+\))?!:|BREAKING CHANGE:"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qiE "^(feat|feature)(\(.+\))?:"; then
+            BUMP="minor"
+          fi
+
+          echo "Bump type: $BUMP"
+
+          case "$BUMP" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "New tag: $NEW_TAG"
+          echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.bump.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.bump.outputs.new_tag }}" -m "Release ${{ steps.bump.outputs.new_tag }}"
+          git push origin "${{ steps.bump.outputs.new_tag }}"
 
       - name: Set up Go
+        if: steps.bump.outputs.skip != 'true'
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
 
       - name: Build binaries
+        if: steps.bump.outputs.skip != 'true'
         run: make release
 
       - name: Create Release
+        if: steps.bump.outputs.skip != 'true'
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.bump.outputs.new_tag }}
           files: |
             bin/picky-darwin-arm64
             bin/picky-darwin-amd64
@@ -34,11 +109,14 @@ jobs:
           generate_release_notes: true
 
       - name: Update Homebrew formula
+        if: steps.bump.outputs.skip != 'true'
         env:
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
+          VERSION="${{ steps.bump.outputs.new_tag }}"
+          VERSION="${VERSION#v}"
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $HOMEBREW_TAP_TOKEN" \
             https://api.github.com/repos/yepzdk/homebrew-tools/dispatches \
-            -d "{\"event_type\":\"update-picky\",\"client_payload\":{\"version\":\"${GITHUB_REF_NAME#v}\"}}"
+            -d "{\"event_type\":\"update-picky\",\"client_payload\":{\"version\":\"$VERSION\"}}"
