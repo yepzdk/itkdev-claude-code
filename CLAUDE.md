@@ -48,6 +48,7 @@ internal/
     file_checker.go            # Language-aware lint/format
     tdd_enforcer.go            # TDD order enforcement
     tool_redirect.go           # Block/redirect tool calls
+    branch_guard.go            # Enforce branch workflow (no commits to main)
     spec_stop_guard.go         # Prevent premature stop during /spec
     spec_plan_validator.go     # Plan file structure validation
     spec_verify_validator.go   # Verification result validation
@@ -224,21 +225,62 @@ Database tests use in-memory SQLite (`:memory:`). Console tests use `httptest.Ne
 
 Keep dependencies minimal. Use stdlib where possible (`net/http`, `log/slog`, `encoding/json`, `embed`).
 
+## Development Workflow
+
+All changes go through pull requests. Direct pushes to `main` are blocked by a GitHub Ruleset (admins can bypass for emergencies only).
+
+### Branch workflow
+
+1. **Create a feature branch** from `main`:
+   ```bash
+   git checkout main && git pull
+   git checkout -b feat/my-feature
+   ```
+2. **Make changes** and commit using [Conventional Commits](https://www.conventionalcommits.org/):
+   - `fix: ...` — patch bump (bug fix)
+   - `feat: ...` — minor bump (new feature)
+   - `feat!: ...` or body contains `BREAKING CHANGE:` — major bump
+   - Other prefixes (`chore:`, `docs:`, `refactor:`, `test:`) — patch bump
+3. **Push and open a PR** against `main`:
+   ```bash
+   git push -u origin feat/my-feature
+   gh pr create
+   ```
+4. **Get at least 1 approving review** before merging.
+5. **Merge via GitHub** (squash, rebase, or merge commit — all allowed). The feature branch is auto-deleted after merge.
+
+### Never commit directly to main
+
+This applies to both humans and AI agents (Claude Code). Always work in a feature branch and merge via PR.
+
 ## Releasing
 
-Releases are automated via GitHub Actions (`.github/workflows/release.yml`).
+Releases are fully automated via two GitHub Actions workflows:
 
-### Trigger a release
+### Auto-tagging (`.github/workflows/auto-tag.yml`)
 
+On every push to `main` (i.e., PR merge), the auto-tag workflow:
+1. Finds the latest `v*` tag
+2. Analyzes commit messages since that tag using Conventional Commits:
+   - `feat!:` or `BREAKING CHANGE:` → **major** bump
+   - `feat:` → **minor** bump
+   - Everything else → **patch** bump
+3. Creates and pushes the new tag (e.g., `v0.3.0` → `v0.3.1`)
+
+### Release build (`.github/workflows/release.yml`)
+
+Triggered by the new tag push, this workflow:
+1. Builds 4 binaries (darwin/linux × arm64/amd64) via `make release`
+2. Creates a GitHub release with the binaries attached
+3. Dispatches a `repository_dispatch` event to `yepzdk/homebrew-tools` to update the Homebrew formula
+
+### Manual tagging
+
+You can still manually tag for specific version jumps:
 ```bash
-git tag v0.2.0
+git tag v1.0.0
 git push --tags
 ```
-
-The workflow will:
-1. Build 4 binaries (darwin/linux × arm64/amd64) via `make release`
-2. Create a GitHub release with the binaries attached
-3. Dispatch a `repository_dispatch` event to `yepzdk/homebrew-tools` to update the Homebrew formula
 
 ### Required secret
 

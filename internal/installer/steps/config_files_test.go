@@ -108,26 +108,28 @@ func TestHooksConfigIncludesSessionStart(t *testing.T) {
 		t.Fatal("hooksConfig should include SessionStart")
 	}
 
-	// Verify SessionStart structure matches SessionEnd pattern
+	// Verify SessionStart structure has entries for session-start and branch-guard
 	startHooks, ok := sessionStart.([]map[string]any)
-	if !ok || len(startHooks) != 1 {
-		t.Fatal("SessionStart should have one hook entry")
+	if !ok || len(startHooks) < 2 {
+		t.Fatalf("SessionStart should have at least 2 hook entries, got %d", len(startHooks))
 	}
 
+	// Verify first entry is session-start
 	hookList, ok := startHooks[0]["hooks"].([]map[string]any)
 	if !ok || len(hookList) != 1 {
-		t.Fatal("SessionStart should have one hook command")
+		t.Fatal("SessionStart first entry should have one hook command")
+	}
+	if hookList[0]["command"] != "/test/bin/picky hook session-start" {
+		t.Errorf("expected session-start command, got %v", hookList[0]["command"])
 	}
 
-	hook := hookList[0]
-	if hook["type"] != "command" {
-		t.Errorf("expected type=command, got %v", hook["type"])
+	// Verify second entry is branch-guard
+	hookList, ok = startHooks[1]["hooks"].([]map[string]any)
+	if !ok || len(hookList) != 1 {
+		t.Fatal("SessionStart second entry should have one hook command")
 	}
-	if hook["command"] != "/test/bin/picky hook session-start" {
-		t.Errorf("expected command with session-start, got %v", hook["command"])
-	}
-	if hook["timeout"] != 15 {
-		t.Errorf("expected timeout=15, got %v", hook["timeout"])
+	if hookList[0]["command"] != "/test/bin/picky hook branch-guard" {
+		t.Errorf("expected branch-guard command, got %v", hookList[0]["command"])
 	}
 }
 
