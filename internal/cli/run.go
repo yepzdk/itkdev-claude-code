@@ -47,7 +47,7 @@ background goroutine for the lifetime of the session.`,
 			return fmt.Errorf("create session dir: %w", err)
 		}
 
-		logger.Info("starting session", "id", sessionID)
+		logger.Debug("starting session", "id", sessionID)
 
 		// Start console server as goroutine
 		srv, err := console.New(cfg.Port, logger)

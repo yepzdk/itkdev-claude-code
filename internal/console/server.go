@@ -177,7 +177,7 @@ func (s *Server) StartWithReady(readyCh chan<- struct{}) error {
 			s.port = tryPort
 			s.http.Addr = addr
 		}
-		s.logger.Info("console server started", "port", tryPort)
+		s.logger.Debug("console server started", "port", tryPort)
 		if readyCh != nil {
 			close(readyCh)
 		}
