@@ -1,14 +1,23 @@
-// Package statusline reads Claude Code status JSON from stdin and formats a
-// status bar string with widgets for session, context, plan, worktree, and tips.
+// Package statusline formats a minimal status bar with git branch,
+// plan progress, and context usage with ANSI coloring.
 package statusline
 
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 )
 
-// Input is the JSON structure that Claude Code pipes to the statusline command.
+// ANSI escape codes.
+const (
+	dim    = "\033[2m"
+	yellow = "\033[33m"
+	red    = "\033[31m"
+	reset  = "\033[0m"
+)
+
+// Input is the data used to render the status bar.
 type Input struct {
 	SessionID  string  `json:"session_id"`
 	ContextPct float64 `json:"context_pct"`
@@ -16,6 +25,7 @@ type Input struct {
 	Worktree   *Wt     `json:"worktree"`
 	Duration   int     `json:"duration_secs"`
 	Messages   int     `json:"messages"`
+	Branch     string  `json:"branch"`
 }
 
 // Plan represents plan metadata in the status input.
@@ -33,29 +43,29 @@ type Wt struct {
 	Slug   string `json:"slug"`
 }
 
-// Format reads the Input and produces a formatted status bar string.
+// Format renders the status bar string with ANSI colors.
+// Layout: branch │ P:name done/total │ CTX ▰▰▱▱ pct%
+// Empty parts are omitted. Color only for context >= 80%.
 func Format(input *Input) string {
 	var parts []string
 
-	parts = append(parts, formatSession(input))
-
-	if ctx := formatContext(input.ContextPct); ctx != "" {
-		parts = append(parts, ctx)
+	if input.Branch != "" {
+		parts = append(parts, input.Branch)
 	}
 
 	if input.Plan != nil {
 		parts = append(parts, formatPlan(input.Plan))
 	}
 
-	if input.Worktree != nil && input.Worktree.Active {
-		parts = append(parts, formatWorktree(input.Worktree))
+	if ctx := formatContext(input.ContextPct); ctx != "" {
+		parts = append(parts, ctx)
 	}
 
-	if tip := selectTip(input); tip != "" {
-		parts = append(parts, tip)
+	if len(parts) == 0 {
+		return ""
 	}
 
-	return strings.Join(parts, " | ")
+	return dim + strings.Join(parts, " │ ") + reset
 }
 
 // ParseAndFormat parses JSON bytes and formats the status bar.
@@ -67,47 +77,21 @@ func ParseAndFormat(data []byte) (string, error) {
 	return Format(&input), nil
 }
 
-func formatSession(input *Input) string {
-	id := input.SessionID
-	if len(id) > 16 {
-		id = id[:16]
-	}
-	dur := formatDuration(input.Duration)
-	return fmt.Sprintf("S:%s %s M:%d", id, dur, input.Messages)
-}
-
-func formatDuration(secs int) string {
-	if secs < 60 {
-		return fmt.Sprintf("%ds", secs)
-	}
-	m := secs / 60
-	s := secs % 60
-	if m < 60 {
-		return fmt.Sprintf("%dm%02ds", m, s)
-	}
-	h := m / 60
-	m = m % 60
-	return fmt.Sprintf("%dh%02dm", h, m)
-}
-
 func formatContext(pct float64) string {
 	if pct <= 0 {
 		return ""
 	}
-	indicator := contextIndicator(pct)
-	return fmt.Sprintf("CTX:%s%.0f%%", indicator, pct)
-}
 
-func contextIndicator(pct float64) string {
+	bar := progressBar(pct)
+	text := fmt.Sprintf("CTX %s %.0f%%", bar, pct)
+
 	switch {
 	case pct >= 90:
-		return "!! "
+		return reset + red + text + " HANDOFF" + reset + dim
 	case pct >= 80:
-		return "! "
-	case pct >= 60:
-		return "~ "
+		return reset + yellow + text + reset + dim
 	default:
-		return ""
+		return text
 	}
 }
 
@@ -116,9 +100,17 @@ func formatPlan(p *Plan) string {
 	if len(name) > 20 {
 		name = name[:20]
 	}
-	return fmt.Sprintf("P:%s [%s %d/%d]", name, p.Status, p.Done, p.Total)
+	return fmt.Sprintf("P:%s %d/%d", name, p.Done, p.Total)
 }
 
-func formatWorktree(wt *Wt) string {
-	return fmt.Sprintf("WT:%s", wt.Branch)
+// progressBar returns a 10-segment bar: ▰ for filled, ▱ for empty.
+func progressBar(pct float64) string {
+	filled := int(math.Round(pct / 10))
+	if filled < 0 {
+		filled = 0
+	}
+	if filled > 10 {
+		filled = 10
+	}
+	return strings.Repeat("▰", filled) + strings.Repeat("▱", 10-filled)
 }

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-//go:embed all:rules all:commands all:agents
+//go:embed all:rules all:commands all:agents all:skills
 var embedded embed.FS
 
 //go:embed all:viewer
@@ -23,7 +23,7 @@ func ViewerFS() (fs.FS, error) {
 }
 
 // categories lists the asset directories that are embedded.
-var categories = []string{"rules", "commands", "agents"}
+var categories = []string{"rules", "commands", "agents", "skills"}
 
 // ListAssets returns the relative paths of all files in the given category
 // (e.g. "rules", "commands", "agents"). Excludes .gitkeep files.
@@ -52,7 +52,7 @@ func ListAssets(category string) ([]string, error) {
 }
 
 // ReadAsset reads the contents of an embedded asset by its relative path
-// (e.g. "rules/example.md").
+// (e.g. "rules/coding-standards.md").
 func ReadAsset(path string) ([]byte, error) {
 	return embedded.ReadFile(path)
 }

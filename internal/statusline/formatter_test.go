@@ -1,91 +1,84 @@
 package statusline
 
 import (
+	"strings"
 	"testing"
 )
 
-func TestFormatSession(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    *Input
-		contains string
-	}{
-		{
-			name:     "basic session info",
-			input:    &Input{SessionID: "picky-123-1", Duration: 90, Messages: 5},
-			contains: "S:picky-123-1 1m30s M:5",
-		},
-		{
-			name:     "long session ID truncated",
-			input:    &Input{SessionID: "picky-very-long-session-id-12345", Duration: 0, Messages: 0},
-			contains: "S:picky-very-long- 0s M:0",
-		},
-		{
-			name:     "hours formatting",
-			input:    &Input{SessionID: "s1", Duration: 3661, Messages: 100},
-			contains: "S:s1 1h01m M:100",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := formatSession(tt.input)
-			if result != tt.contains {
-				t.Errorf("formatSession() = %q, want %q", result, tt.contains)
-			}
-		})
-	}
-}
-
-func TestFormatDuration(t *testing.T) {
-	tests := []struct {
-		secs int
-		want string
-	}{
-		{0, "0s"},
-		{30, "30s"},
-		{60, "1m00s"},
-		{90, "1m30s"},
-		{3600, "1h00m"},
-		{3661, "1h01m"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.want, func(t *testing.T) {
-			got := formatDuration(tt.secs)
-			if got != tt.want {
-				t.Errorf("formatDuration(%d) = %q, want %q", tt.secs, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestFormatContext(t *testing.T) {
+func TestProgressBar(t *testing.T) {
 	tests := []struct {
 		pct  float64
 		want string
 	}{
-		{0, ""},
-		{30, "CTX:30%"},
-		{60, "CTX:~ 60%"},
-		{80, "CTX:! 80%"},
-		{95, "CTX:!! 95%"},
+		{0, "▱▱▱▱▱▱▱▱▱▱"},
+		{5, "▰▱▱▱▱▱▱▱▱▱"},
+		{25, "▰▰▰▱▱▱▱▱▱▱"},
+		{50, "▰▰▰▰▰▱▱▱▱▱"},
+		{75, "▰▰▰▰▰▰▰▰▱▱"},
+		{100, "▰▰▰▰▰▰▰▰▰▰"},
+		{-5, "▱▱▱▱▱▱▱▱▱▱"},
+		{150, "▰▰▰▰▰▰▰▰▰▰"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
-			got := formatContext(tt.pct)
+			got := progressBar(tt.pct)
 			if got != tt.want {
-				t.Errorf("formatContext(%v) = %q, want %q", tt.pct, got, tt.want)
+				t.Errorf("progressBar(%.0f) = %q, want %q", tt.pct, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestFormatContext_Normal(t *testing.T) {
+	got := formatContext(42)
+	// Should contain the bar and percentage, no color escapes
+	if !strings.Contains(got, "42%") {
+		t.Errorf("formatContext(42) should contain 42%%, got %q", got)
+	}
+	if strings.Contains(got, "HANDOFF") {
+		t.Error("formatContext(42) should not contain HANDOFF")
+	}
+	// Should use dim color only
+	if strings.Contains(got, yellow) || strings.Contains(got, red) {
+		t.Error("formatContext(42) should not use yellow or red")
+	}
+}
+
+func TestFormatContext_Warning(t *testing.T) {
+	got := formatContext(83)
+	if !strings.Contains(got, yellow) {
+		t.Error("formatContext(83) should use yellow")
+	}
+	if !strings.Contains(got, "83%") {
+		t.Errorf("formatContext(83) should contain 83%%, got %q", got)
+	}
+	if strings.Contains(got, "HANDOFF") {
+		t.Error("formatContext(83) should not contain HANDOFF")
+	}
+}
+
+func TestFormatContext_Critical(t *testing.T) {
+	got := formatContext(92)
+	if !strings.Contains(got, red) {
+		t.Error("formatContext(92) should use red")
+	}
+	if !strings.Contains(got, "HANDOFF") {
+		t.Error("formatContext(92) should contain HANDOFF")
+	}
+}
+
+func TestFormatContext_Zero(t *testing.T) {
+	got := formatContext(0)
+	if got != "" {
+		t.Errorf("formatContext(0) should be empty, got %q", got)
 	}
 }
 
 func TestFormatPlan(t *testing.T) {
 	p := &Plan{Name: "add-auth", Status: "PENDING", Done: 2, Total: 5}
 	got := formatPlan(p)
-	want := "P:add-auth [PENDING 2/5]"
+	want := "P:add-auth 2/5"
 	if got != want {
 		t.Errorf("formatPlan() = %q, want %q", got, want)
 	}
@@ -94,60 +87,96 @@ func TestFormatPlan(t *testing.T) {
 func TestFormatPlanLongName(t *testing.T) {
 	p := &Plan{Name: "very-long-plan-name-that-exceeds-limit", Status: "COMPLETE", Done: 5, Total: 5}
 	got := formatPlan(p)
-	want := "P:very-long-plan-name- [COMPLETE 5/5]"
-	if got != want {
-		t.Errorf("formatPlan() = %q, want %q", got, want)
+	if !strings.HasPrefix(got, "P:very-long-plan-name-") {
+		t.Errorf("formatPlan() should truncate name, got %q", got)
+	}
+	if !strings.Contains(got, "5/5") {
+		t.Errorf("formatPlan() should contain 5/5, got %q", got)
 	}
 }
 
-func TestFormatWorktree(t *testing.T) {
-	wt := &Wt{Active: true, Branch: "spec/add-auth"}
-	got := formatWorktree(wt)
-	want := "WT:spec/add-auth"
-	if got != want {
-		t.Errorf("formatWorktree() = %q, want %q", got, want)
+func TestFormat_BranchOnly(t *testing.T) {
+	input := &Input{Branch: "main"}
+	got := Format(input)
+	if !strings.Contains(got, "main") {
+		t.Errorf("Format() should contain branch, got %q", got)
+	}
+	// Should not contain separator when only one part
+	if strings.Contains(got, "│") {
+		t.Errorf("Format() should not have separator with single part, got %q", got)
 	}
 }
 
-func TestFormat(t *testing.T) {
+func TestFormat_BranchAndContext(t *testing.T) {
+	input := &Input{Branch: "main", ContextPct: 42}
+	got := Format(input)
+	if !strings.Contains(got, "main") {
+		t.Errorf("Format() should contain branch, got %q", got)
+	}
+	if !strings.Contains(got, "42%") {
+		t.Errorf("Format() should contain context, got %q", got)
+	}
+	if !strings.Contains(got, "│") {
+		t.Errorf("Format() should have separator, got %q", got)
+	}
+}
+
+func TestFormat_Full(t *testing.T) {
 	input := &Input{
-		SessionID:  "picky-42-1",
+		Branch:     "feat/auth",
 		ContextPct: 45,
-		Duration:   120,
-		Messages:   10,
+		Plan:       &Plan{Name: "auth", Status: "PENDING", Done: 1, Total: 4},
 	}
 	got := Format(input)
-	want := "S:picky-42-1 2m00s M:10 | CTX:45%"
-	if got != want {
-		t.Errorf("Format() = %q, want %q", got, want)
+	if !strings.Contains(got, "feat/auth") {
+		t.Errorf("Format() missing branch, got %q", got)
+	}
+	if !strings.Contains(got, "P:auth 1/4") {
+		t.Errorf("Format() missing plan, got %q", got)
+	}
+	if !strings.Contains(got, "45%") {
+		t.Errorf("Format() missing context, got %q", got)
 	}
 }
 
-func TestFormatWithPlanAndWorktree(t *testing.T) {
-	input := &Input{
-		SessionID:  "s1",
-		ContextPct: 85,
-		Duration:   60,
-		Messages:   3,
-		Plan:       &Plan{Name: "auth", Status: "PENDING", Done: 1, Total: 4},
-		Worktree:   &Wt{Active: true, Branch: "spec/auth"},
-	}
+func TestFormat_Empty(t *testing.T) {
+	input := &Input{}
 	got := Format(input)
-	want := "S:s1 1m00s M:3 | CTX:! 85% | P:auth [PENDING 1/4] | WT:spec/auth | TIP: Wrap up current task"
-	if got != want {
-		t.Errorf("Format() = %q, want %q", got, want)
+	if got != "" {
+		t.Errorf("Format() should be empty for no data, got %q", got)
+	}
+}
+
+func TestFormat_ContextOnly(t *testing.T) {
+	input := &Input{ContextPct: 60}
+	got := Format(input)
+	if !strings.Contains(got, "60%") {
+		t.Errorf("Format() should contain context, got %q", got)
+	}
+}
+
+func TestFormat_CriticalColoring(t *testing.T) {
+	input := &Input{Branch: "main", ContextPct: 95}
+	got := Format(input)
+	if !strings.Contains(got, red) {
+		t.Error("Format() at 95% should contain red ANSI code")
+	}
+	if !strings.Contains(got, "HANDOFF") {
+		t.Error("Format() at 95% should contain HANDOFF")
 	}
 }
 
 func TestParseAndFormat(t *testing.T) {
-	data := []byte(`{"session_id":"test-1","context_pct":50,"duration_secs":30,"messages":2}`)
+	data := []byte(`{"branch":"main","context_pct":50}`)
 	got, err := ParseAndFormat(data)
 	if err != nil {
 		t.Fatalf("ParseAndFormat() error: %v", err)
 	}
-	want := "S:test-1 30s M:2 | CTX:50%"
-	if got != want {
-		t.Errorf("ParseAndFormat() = %q, want %q", got, want)
+	if !strings.Contains(got, "main") {
+		t.Errorf("ParseAndFormat() should contain branch, got %q", got)
+	}
+	if !strings.Contains(got, "50%") {
+		t.Errorf("ParseAndFormat() should contain context, got %q", got)
 	}
 }
 
@@ -155,28 +184,5 @@ func TestParseAndFormatInvalidJSON(t *testing.T) {
 	_, err := ParseAndFormat([]byte(`{invalid`))
 	if err == nil {
 		t.Error("ParseAndFormat() expected error for invalid JSON")
-	}
-}
-
-func TestSelectTip(t *testing.T) {
-	tests := []struct {
-		name  string
-		input *Input
-		want  string
-	}{
-		{"at 90% context", &Input{ContextPct: 90}, "TIP: Handoff imminent"},
-		{"at 80% context", &Input{ContextPct: 80}, "TIP: Wrap up current task"},
-		{"verified plan", &Input{Plan: &Plan{Status: "VERIFIED"}, Messages: 5}, "TIP: Plan verified, done!"},
-		{"new session", &Input{Messages: 0}, "TIP: Session started"},
-		{"normal state", &Input{Messages: 10, ContextPct: 40}, ""},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := selectTip(tt.input)
-			if got != tt.want {
-				t.Errorf("selectTip() = %q, want %q", got, tt.want)
-			}
-		})
 	}
 }

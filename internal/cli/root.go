@@ -19,6 +19,9 @@ management, spec-driven development, and persistent memory.`,
 	Version:       config.Version(),
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runCmd.RunE(cmd, args)
+	},
 }
 
 func init() {

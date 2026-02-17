@@ -8,8 +8,8 @@ import (
 	"github.com/jesperpedersen/picky-claude/internal/installer"
 )
 
-// ClaudeFiles extracts embedded rules, commands, and agents to the project's
-// .claude/ directory.
+// ClaudeFiles extracts embedded rules, commands, agents, and skills to the
+// project's .claude/ directory.
 type ClaudeFiles struct {
 	created bool // Track if we created .claude/ for rollback
 }
@@ -26,7 +26,7 @@ func (c *ClaudeFiles) Run(ctx *installer.Context) error {
 		return fmt.Errorf("extract assets: %w", err)
 	}
 
-	ctx.Messages = append(ctx.Messages, "  + Extracted rules, commands, and agents to .claude/")
+	ctx.Messages = append(ctx.Messages, "  + Extracted rules, commands, agents, and skills to .claude/")
 	return nil
 }
 

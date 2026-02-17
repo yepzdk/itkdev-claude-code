@@ -42,6 +42,16 @@ func TestListAssets_Agents(t *testing.T) {
 	}
 }
 
+func TestListAssets_Skills(t *testing.T) {
+	files, err := ListAssets("skills")
+	if err != nil {
+		t.Fatalf("ListAssets(skills) failed: %v", err)
+	}
+	if len(files) == 0 {
+		t.Error("expected at least one skill file")
+	}
+}
+
 func TestListAssets_InvalidCategory(t *testing.T) {
 	_, err := ListAssets("nonexistent")
 	if err == nil {
@@ -50,7 +60,7 @@ func TestListAssets_InvalidCategory(t *testing.T) {
 }
 
 func TestReadAsset(t *testing.T) {
-	data, err := ReadAsset("rules/example.md")
+	data, err := ReadAsset("rules/coding-standards.md")
 	if err != nil {
 		t.Fatalf("ReadAsset failed: %v", err)
 	}
@@ -69,7 +79,7 @@ func TestExtractTo(t *testing.T) {
 	}
 
 	// Check rules were extracted
-	ruleFile := filepath.Join(targetDir, "rules", "example.md")
+	ruleFile := filepath.Join(targetDir, "rules", "coding-standards.md")
 	if _, err := os.Stat(ruleFile); os.IsNotExist(err) {
 		t.Errorf("expected %s to exist after extraction", ruleFile)
 	}
@@ -86,9 +96,15 @@ func TestExtractTo(t *testing.T) {
 		t.Errorf("expected %s to exist after extraction", agentFile)
 	}
 
+	// Check skills
+	skillFile := filepath.Join(targetDir, "skills", "spec.md")
+	if _, err := os.Stat(skillFile); os.IsNotExist(err) {
+		t.Errorf("expected %s to exist after extraction", skillFile)
+	}
+
 	// Verify content matches
 	data, _ := os.ReadFile(ruleFile)
-	embedded, _ := ReadAsset("rules/example.md")
+	embedded, _ := ReadAsset("rules/coding-standards.md")
 	if string(data) != string(embedded) {
 		t.Error("extracted content does not match embedded content")
 	}

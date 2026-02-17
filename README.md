@@ -21,22 +21,13 @@ Picky Claude compiles to a **single Go binary** with all assets embedded. No int
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed and configured
 - [Git](https://git-scm.com/) 2.20+
-- Go 1.25+ (only for building from source)
 
 ## Installation
 
-### From Source
+### Homebrew (macOS/Linux)
 
 ```bash
-git clone https://github.com/jesperpedersen/picky-claude.git
-cd picky-claude
-make build
-```
-
-The binary is at `bin/picky`. Add it to your PATH or copy it somewhere in your PATH:
-
-```bash
-cp bin/picky /usr/local/bin/
+brew install yepzdk/tools/picky-claude
 ```
 
 ### Project Setup
@@ -89,6 +80,8 @@ When launched via `picky run`, Claude Code gets:
 | `picky session list` | List active sessions |
 | `picky statusline` | Format the status bar (reads JSON from stdin) |
 | `picky worktree <subcommand>` | Git worktree management (create, detect, diff, sync, cleanup, status) |
+| `picky settings install` | Add Picky Claude entries to global `~/.claude/settings.json` |
+| `picky settings uninstall` | Remove Picky Claude entries from global `~/.claude/settings.json` |
 
 All commands support `--json` for structured output.
 
@@ -151,35 +144,44 @@ Configuration is via environment variables:
 | `PICKY_SESSION_ID` | auto-generated | Session identifier |
 | `PICKY_NO_UPDATE` | — | Disable auto-update check |
 
-## Building
+## Development
+
+### Building from Source
+
+Requires Go 1.25+.
 
 ```bash
-# Build for current platform
+git clone https://github.com/jesperpedersen/picky-claude.git
+cd picky-claude
 make build
-
-# Build for all platforms (macOS + Linux, arm64 + amd64)
-make release
-
-# Run tests
-make test
-
-# Run linter
-make lint
-
-# Build web viewer then compile
-make all
 ```
 
-## Cross-Platform
+The binary is at `bin/picky`. Add it to your PATH or copy it somewhere in your PATH:
 
-Picky Claude uses pure Go SQLite (`modernc.org/sqlite`) — no CGO required. The release builds target:
+```bash
+cp bin/picky /usr/local/bin/
+```
+
+### Make Targets
+
+```bash
+make build        # Build for current platform
+make test         # Run all tests
+make lint         # Run golangci-lint
+make release      # Cross-compile for macOS + Linux (arm64/amd64)
+make all          # Build web viewer then compile
+```
+
+### Cross-Platform
+
+Picky Claude uses pure Go SQLite (`modernc.org/sqlite`) — no CGO required. Release builds target:
 
 - macOS arm64 (Apple Silicon)
 - macOS amd64 (Intel)
 - Linux arm64
 - Linux amd64
 
-## Renaming
+### Renaming
 
 All branding is in `internal/config/branding.go`. To rename:
 
