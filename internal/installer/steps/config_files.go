@@ -240,6 +240,16 @@ func hooksConfig(binPath string) map[string]any {
 					},
 				},
 			},
+			{
+				"hooks": []map[string]any{
+					{
+						"type":    "command",
+						"command": binPath + " hook notify",
+						"async":   true,
+						"timeout": 15,
+					},
+				},
+			},
 		},
 		"SessionStart": []map[string]any{
 			{
