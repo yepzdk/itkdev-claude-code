@@ -152,6 +152,16 @@ func hooksConfig(binPath string) map[string]any {
 					},
 				},
 			},
+			{
+				"matcher": "Bash",
+				"hooks": []map[string]any{
+					{
+						"type":    "command",
+						"command": binPath + " hook branch-guard",
+						"timeout": 15,
+					},
+				},
+			},
 		},
 		"PostToolUse": []map[string]any{
 			{
@@ -226,6 +236,15 @@ func hooksConfig(binPath string) map[string]any {
 					{
 						"type":    "command",
 						"command": binPath + " hook session-start",
+						"timeout": 15,
+					},
+				},
+			},
+			{
+				"hooks": []map[string]any{
+					{
+						"type":    "command",
+						"command": binPath + " hook branch-guard",
 						"timeout": 15,
 					},
 				},
