@@ -157,6 +157,35 @@ func (db *DB) RecentObservations(project string, limit int) ([]*Observation, err
 	return results, rows.Err()
 }
 
+// ListBySessionID returns observations for a given session, ordered most recent first.
+func (db *DB) ListBySessionID(sessionID string, limit int) ([]*Observation, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+
+	rows, err := db.conn.Query(
+		`SELECT id, session_id, type, title, text, project, metadata, created_at
+		 FROM observations WHERE session_id = ? ORDER BY created_at DESC LIMIT ?`,
+		sessionID, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list observations by session %s: %w", sessionID, err)
+	}
+	defer rows.Close()
+
+	var results []*Observation
+	for rows.Next() {
+		o := &Observation{}
+		var createdAt string
+		if err := rows.Scan(&o.ID, &o.SessionID, &o.Type, &o.Title, &o.Text, &o.Project, &o.Metadata, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan observation: %w", err)
+		}
+		o.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+		results = append(results, o)
+	}
+	return results, rows.Err()
+}
+
 // SearchFilter defines parameters for filtered full-text search.
 type SearchFilter struct {
 	Query     string
