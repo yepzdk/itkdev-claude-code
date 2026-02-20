@@ -50,6 +50,40 @@
     const statusEl = document.getElementById('status');
     let hasEvents = false;
 
+    function clearPlaceholder() {
+      if (!hasEvents) {
+        eventsEl.innerHTML = '';
+        hasEvents = true;
+      }
+    }
+
+    function createEventCard(data, timestamp) {
+      const div = document.createElement('div');
+      div.className = 'event';
+      div.innerHTML = `
+        <div class="type">${escHtml(data.type || 'observation')}</div>
+        <div class="title">${escHtml(data.title || '')}</div>
+        <div class="time">${timestamp}</div>
+      `;
+      return div;
+    }
+
+    async function loadRecent() {
+      try {
+        const resp = await fetch('/api/observations/recent?limit=50');
+        if (!resp.ok) return;
+        const observations = await resp.json();
+        if (!observations || observations.length === 0) return;
+        clearPlaceholder();
+        for (const obs of observations) {
+          const time = obs.CreatedAt ? new Date(obs.CreatedAt).toLocaleString() : '';
+          eventsEl.appendChild(createEventCard(obs, time));
+        }
+      } catch (err) {
+        console.error('Load recent error:', err);
+      }
+    }
+
     function connect() {
       const es = new EventSource('/api/events');
       es.onopen = () => { statusEl.textContent = 'Connected'; };
@@ -57,20 +91,10 @@
         statusEl.textContent = 'Disconnected — retrying...';
       };
       es.addEventListener('observation', (e) => {
-        if (!hasEvents) {
-          eventsEl.innerHTML = '';
-          hasEvents = true;
-        }
+        clearPlaceholder();
         try {
           const data = JSON.parse(e.data);
-          const div = document.createElement('div');
-          div.className = 'event';
-          div.innerHTML = `
-            <div class="type">${escHtml(data.type || 'observation')}</div>
-            <div class="title">${escHtml(data.title || '')}</div>
-            <div class="time">${new Date().toLocaleTimeString()}</div>
-          `;
-          eventsEl.prepend(div);
+          eventsEl.prepend(createEventCard(data, new Date().toLocaleTimeString()));
         } catch (err) {
           console.error('Parse event error:', err);
         }
@@ -83,6 +107,7 @@
       return d.innerHTML;
     }
 
+    loadRecent();
     connect();
   </script>
 </body>
