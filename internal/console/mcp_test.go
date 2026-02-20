@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 )
@@ -142,5 +143,69 @@ func TestMCPSaveMemory(t *testing.T) {
 	}
 	if result.IsError {
 		t.Error("expected successful result")
+	}
+}
+
+func TestMCPSaveMemoryBroadcast(t *testing.T) {
+	srv := testServer(t)
+
+	// Subscribe to SSE before calling save_memory
+	ch := srv.sse.Subscribe()
+	defer srv.sse.Unsubscribe(ch)
+
+	mcpSrv := srv.newMCPServer()
+	tool := mcpSrv.GetTool("save_memory")
+	if tool == nil {
+		t.Fatal("save_memory tool not found")
+	}
+
+	result, err := tool.Handler(context.Background(), mcp.CallToolRequest{
+		Params: mcp.CallToolParams{
+			Name: "save_memory",
+			Arguments: map[string]any{
+				"text":  "Important discovery about auth",
+				"title": "Auth Discovery",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("save_memory handler: %v", err)
+	}
+	if result.IsError {
+		t.Error("expected successful result")
+	}
+
+	// Extract the created observation ID from the MCP result
+	var mcpResult map[string]any
+	tc, _ := mcp.AsTextContent(result.Content[0])
+	json.Unmarshal([]byte(tc.Text), &mcpResult)
+	createdID := mcpResult["id"].(float64)
+
+	// Read the SSE event with timeout
+	select {
+	case e := <-ch:
+		// Verify event type
+		if e.Type != "observation" {
+			t.Errorf("event type = %q, want %q", e.Type, "observation")
+		}
+		// Parse event data
+		var data map[string]any
+		if err := json.Unmarshal([]byte(e.Data), &data); err != nil {
+			t.Fatalf("failed to parse event data: %v", err)
+		}
+		// Verify id matches the created observation
+		if id, _ := data["id"].(float64); id != createdID {
+			t.Errorf("event data id = %v, want %v", id, createdID)
+		}
+		// Verify type is "discovery"
+		if typ, _ := data["type"].(string); typ != "discovery" {
+			t.Errorf("event data type = %q, want %q", typ, "discovery")
+		}
+		// Verify title matches
+		if title, _ := data["title"].(string); title != "Auth Discovery" {
+			t.Errorf("event data title = %q, want %q", title, "Auth Discovery")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for SSE event")
 	}
 }
