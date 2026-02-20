@@ -10,6 +10,7 @@ type Summary struct {
 	ID        int64
 	SessionID string
 	Text      string
+	Project   string
 	CreatedAt time.Time
 }
 
@@ -25,13 +26,16 @@ func (db *DB) InsertSummary(s *Summary) (int64, error) {
 	return res.LastInsertId()
 }
 
-// RecentSummaries returns the N most recent summaries.
+// RecentSummaries returns the N most recent summaries with project info from the linked session.
 func (db *DB) RecentSummaries(limit int) ([]*Summary, error) {
 	if limit <= 0 {
 		limit = 10
 	}
 	rows, err := db.conn.Query(
-		`SELECT id, session_id, text, created_at FROM summaries ORDER BY created_at DESC LIMIT ?`,
+		`SELECT s.id, s.session_id, s.text, s.created_at, COALESCE(sess.project, '')
+		 FROM summaries s
+		 LEFT JOIN sessions sess ON s.session_id = sess.id
+		 ORDER BY s.created_at DESC LIMIT ?`,
 		limit,
 	)
 	if err != nil {
@@ -43,7 +47,7 @@ func (db *DB) RecentSummaries(limit int) ([]*Summary, error) {
 	for rows.Next() {
 		s := &Summary{}
 		var createdAt string
-		if err := rows.Scan(&s.ID, &s.SessionID, &s.Text, &createdAt); err != nil {
+		if err := rows.Scan(&s.ID, &s.SessionID, &s.Text, &createdAt, &s.Project); err != nil {
 			return nil, fmt.Errorf("scan summary: %w", err)
 		}
 		s.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
