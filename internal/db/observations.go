@@ -218,6 +218,44 @@ func (db *DB) FilteredSearch(f SearchFilter) ([]*Observation, error) {
 	return results, rows.Err()
 }
 
+// DistinctTypes returns all distinct observation types.
+func (db *DB) DistinctTypes() ([]string, error) {
+	rows, err := db.conn.Query(`SELECT DISTINCT type FROM observations WHERE type != '' ORDER BY type`)
+	if err != nil {
+		return nil, fmt.Errorf("distinct types: %w", err)
+	}
+	defer rows.Close()
+
+	var types []string
+	for rows.Next() {
+		var t string
+		if err := rows.Scan(&t); err != nil {
+			return nil, fmt.Errorf("scan type: %w", err)
+		}
+		types = append(types, t)
+	}
+	return types, rows.Err()
+}
+
+// DistinctProjects returns all distinct project names.
+func (db *DB) DistinctProjects() ([]string, error) {
+	rows, err := db.conn.Query(`SELECT DISTINCT project FROM observations WHERE project != '' ORDER BY project`)
+	if err != nil {
+		return nil, fmt.Errorf("distinct projects: %w", err)
+	}
+	defer rows.Close()
+
+	var projects []string
+	for rows.Next() {
+		var p string
+		if err := rows.Scan(&p); err != nil {
+			return nil, fmt.Errorf("scan project: %w", err)
+		}
+		projects = append(projects, p)
+	}
+	return projects, rows.Err()
+}
+
 // TimelineAround returns observations around a given observation ID.
 func (db *DB) TimelineAround(anchorID int64, before, after int) ([]*Observation, error) {
 	if before <= 0 {

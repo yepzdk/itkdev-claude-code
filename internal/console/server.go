@@ -114,6 +114,7 @@ func (s *Server) registerRoutes() {
 		r.Post("/observations", s.handleCreateObservation)
 		r.Get("/observations/recent", s.handleRecentObservations)
 		r.Get("/observations/{id}", s.handleGetObservation)
+		r.Get("/observations/filters", s.handleObservationFilters)
 		r.Get("/observations/search", s.handleSearchObservations)
 		r.Get("/observations/hybrid-search", s.handleHybridSearch)
 		r.Post("/search/reindex", s.handleReindex)

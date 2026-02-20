@@ -81,6 +81,28 @@ func (s *Server) handleRecentObservations(w http.ResponseWriter, r *http.Request
 	writeJSON(w, http.StatusOK, results)
 }
 
+func (s *Server) handleObservationFilters(w http.ResponseWriter, r *http.Request) {
+	types, err := s.db.DistinctTypes()
+	if err != nil {
+		s.logger.Error("distinct types", "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	projects, err := s.db.DistinctProjects()
+	if err != nil {
+		s.logger.Error("distinct projects", "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	if types == nil {
+		types = []string{}
+	}
+	if projects == nil {
+		projects = []string{}
+	}
+	writeJSON(w, http.StatusOK, map[string][]string{"types": types, "projects": projects})
+}
+
 func (s *Server) handleSearchObservations(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {

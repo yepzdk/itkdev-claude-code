@@ -462,6 +462,59 @@ func TestPromptCRUD(t *testing.T) {
 	}
 }
 
+func TestDistinctTypes(t *testing.T) {
+	db := testDB(t)
+
+	db.InsertObservation(&Observation{SessionID: "s1", Type: "discovery", Title: "a", Text: "a"})
+	db.InsertObservation(&Observation{SessionID: "s1", Type: "bugfix", Title: "b", Text: "b"})
+	db.InsertObservation(&Observation{SessionID: "s1", Type: "discovery", Title: "c", Text: "c"})
+	db.InsertObservation(&Observation{SessionID: "s1", Type: "", Title: "d", Text: "d"})
+
+	types, err := db.DistinctTypes()
+	if err != nil {
+		t.Fatalf("DistinctTypes: %v", err)
+	}
+	if len(types) != 2 {
+		t.Fatalf("got %d types, want 2", len(types))
+	}
+	// Should be sorted: bugfix, discovery
+	if types[0] != "bugfix" || types[1] != "discovery" {
+		t.Errorf("types = %v, want [bugfix discovery]", types)
+	}
+}
+
+func TestDistinctProjects(t *testing.T) {
+	db := testDB(t)
+
+	db.InsertObservation(&Observation{SessionID: "s1", Title: "a", Text: "a", Project: "backend"})
+	db.InsertObservation(&Observation{SessionID: "s1", Title: "b", Text: "b", Project: "frontend"})
+	db.InsertObservation(&Observation{SessionID: "s1", Title: "c", Text: "c", Project: "backend"})
+	db.InsertObservation(&Observation{SessionID: "s1", Title: "d", Text: "d", Project: ""})
+
+	projects, err := db.DistinctProjects()
+	if err != nil {
+		t.Fatalf("DistinctProjects: %v", err)
+	}
+	if len(projects) != 2 {
+		t.Fatalf("got %d projects, want 2", len(projects))
+	}
+	if projects[0] != "backend" || projects[1] != "frontend" {
+		t.Errorf("projects = %v, want [backend frontend]", projects)
+	}
+}
+
+func TestDistinctTypesEmpty(t *testing.T) {
+	db := testDB(t)
+
+	types, err := db.DistinctTypes()
+	if err != nil {
+		t.Fatalf("DistinctTypes: %v", err)
+	}
+	if types != nil {
+		t.Errorf("expected nil for empty db, got %v", types)
+	}
+}
+
 func TestTimelineAround(t *testing.T) {
 	db := testDB(t)
 

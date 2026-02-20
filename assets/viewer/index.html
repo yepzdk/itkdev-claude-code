@@ -110,6 +110,12 @@
       font-family: inherit;
     }
     .search-form input[type="text"] { flex: 1; min-width: 200px; }
+    .filter-row select {
+      background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+      padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.875rem;
+      font-family: inherit;
+    }
+    .filter-row select:focus { outline: none; border-color: #58a6ff; }
     .search-form input[type="text"]:focus,
     .search-form input[type="date"]:focus,
     .search-form select:focus {
@@ -267,17 +273,23 @@
             <form class="search-form" id="search-form">
               <input type="text" id="search-query" placeholder="Search observations..." required>
               <button type="submit" class="btn">Search</button>
+              <button type="button" class="btn btn-secondary" id="search-clear" style="display:none">Clear</button>
             </form>
             <div class="filter-row">
               <label>Type:</label>
-              <input type="text" id="search-type" placeholder="e.g. discovery" style="width:120px">
+              <select id="search-type">
+                <option value="">All types</option>
+              </select>
               <label>Project:</label>
-              <input type="text" id="search-project" placeholder="project" style="width:120px">
+              <select id="search-project">
+                <option value="">All projects</option>
+              </select>
               <label>From:</label>
               <input type="date" id="search-date-start">
               <label>To:</label>
               <input type="date" id="search-date-end">
             </div>
+            <div id="search-status" style="margin-bottom:0.75rem;font-size:0.85rem;color:#8b949e;display:none"></div>
             <div id="search-results"></div>
           </div>
         </div>
@@ -370,7 +382,8 @@
       overlay.classList.remove('visible');
 
       // Load data when switching to a section
-      if (section === 'sessions') loadSessions();
+      if (section === 'search') loadFilters();
+      else if (section === 'sessions') loadSessions();
       else if (section === 'summaries') loadSummaries();
       else if (section === 'plans') loadPlans();
     }
@@ -481,6 +494,52 @@
     // --- Search ---
     const searchForm = document.getElementById('search-form');
     const searchResults = document.getElementById('search-results');
+    const searchClear = document.getElementById('search-clear');
+    const searchStatus = document.getElementById('search-status');
+    const searchTypeSelect = document.getElementById('search-type');
+    const searchProjectSelect = document.getElementById('search-project');
+    let filtersLoaded = false;
+
+    async function loadFilters() {
+      if (filtersLoaded) return;
+      try {
+        const resp = await fetch('/api/observations/filters');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.types) {
+          for (const t of data.types) {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.textContent = t;
+            searchTypeSelect.appendChild(opt);
+          }
+        }
+        if (data.projects) {
+          for (const p of data.projects) {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            searchProjectSelect.appendChild(opt);
+          }
+        }
+        filtersLoaded = true;
+      } catch (err) {
+        console.error('Load filters error:', err);
+      }
+    }
+
+    function clearSearch() {
+      document.getElementById('search-query').value = '';
+      searchTypeSelect.value = '';
+      searchProjectSelect.value = '';
+      document.getElementById('search-date-start').value = '';
+      document.getElementById('search-date-end').value = '';
+      searchResults.innerHTML = '';
+      searchStatus.style.display = 'none';
+      searchClear.style.display = 'none';
+    }
+
+    searchClear.addEventListener('click', clearSearch);
 
     searchForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -488,8 +547,8 @@
       if (!q) return;
 
       const params = new URLSearchParams({ q });
-      const type = document.getElementById('search-type').value.trim();
-      const project = document.getElementById('search-project').value.trim();
+      const type = searchTypeSelect.value;
+      const project = searchProjectSelect.value;
       const dateStart = document.getElementById('search-date-start').value;
       const dateEnd = document.getElementById('search-date-end').value;
       if (type) params.set('type', type);
@@ -498,17 +557,24 @@
       if (dateEnd) params.set('dateEnd', dateEnd);
 
       searchResults.innerHTML = '<div class="placeholder">Searching...</div>';
+      searchStatus.style.display = 'none';
       try {
         const resp = await fetch('/api/observations/search?' + params);
         const results = await resp.json();
         if (!results || results.length === 0) {
           searchResults.innerHTML = '<div class="placeholder">No results found.</div>';
+          searchStatus.textContent = '0 results';
+          searchStatus.style.display = 'block';
+          searchClear.style.display = 'inline-block';
           return;
         }
         searchResults.innerHTML = '';
         for (const obs of results) {
           searchResults.appendChild(createEventCard(obs, fmtTime(obs.CreatedAt)));
         }
+        searchStatus.textContent = results.length + ' result' + (results.length !== 1 ? 's' : '');
+        searchStatus.style.display = 'block';
+        searchClear.style.display = 'inline-block';
       } catch (err) {
         searchResults.innerHTML = '<div class="placeholder">Search failed.</div>';
         console.error('Search error:', err);
