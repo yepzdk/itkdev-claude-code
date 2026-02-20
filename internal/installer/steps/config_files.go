@@ -112,6 +112,7 @@ func settingsJSON(binPath string) []byte {
 				"Skill(spec-implement)",
 				"Skill(spec-verify)",
 				"Skill(itkdev-tools:itkdev-issue-workflow)",
+				"Skill(itkdev-tools:itkdev-code-review)",
 				"LSP",
 			},
 			"deny": []string{},
@@ -292,6 +293,15 @@ func hooksConfig(binPath string) map[string]any {
 					},
 				},
 			},
+			{
+				"hooks": []map[string]any{
+					{
+						"type":    "command",
+						"command": binPath + " hook code-review",
+						"timeout": 15,
+					},
+				},
+			},
 		},
 		"UserPromptSubmit": []map[string]any{
 			{
@@ -299,6 +309,15 @@ func hooksConfig(binPath string) map[string]any {
 					{
 						"type":    "command",
 						"command": binPath + " hook issue-workflow",
+						"timeout": 15,
+					},
+				},
+			},
+			{
+				"hooks": []map[string]any{
+					{
+						"type":    "command",
+						"command": binPath + " hook code-review",
 						"timeout": 15,
 					},
 				},

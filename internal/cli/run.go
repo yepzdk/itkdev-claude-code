@@ -21,6 +21,7 @@ import (
 )
 
 var issueFlag string
+var reviewFlag string
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -119,7 +120,7 @@ background goroutine for the lifetime of the session.`,
 		}
 
 		// Build environment for Claude Code
-		env := session.BuildEnv(sessionID, actualPort, issueFlag)
+		env := session.BuildEnv(sessionID, actualPort, issueFlag, reviewFlag)
 
 		// Launch Claude Code
 		claudeArgs := session.BuildClaudeArgs()
@@ -296,5 +297,6 @@ func autoInstallIfNeeded(logger *slog.Logger) error {
 
 func init() {
 	runCmd.Flags().StringVar(&issueFlag, "issue", "", "GitHub issue number to work on (sets ICC_ISSUE_ID)")
+	runCmd.Flags().StringVar(&reviewFlag, "review", "", "PR number or branch to review (sets ICC_REVIEW_ID)")
 	rootCmd.AddCommand(runCmd)
 }
