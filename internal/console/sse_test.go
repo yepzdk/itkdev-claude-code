@@ -175,3 +175,48 @@ func TestSSEEndpointRegistered(t *testing.T) {
 		t.Errorf("status = %d, want %d", rr.Code, http.StatusOK)
 	}
 }
+
+func TestSSEHeartbeat(t *testing.T) {
+	srv := testServer(t)
+
+	// Create a request with a cancellable context
+	ctx, cancel := context.WithCancel(context.Background())
+	req := httptest.NewRequest("GET", "/api/events", nil).WithContext(ctx)
+	rr := httptest.NewRecorder()
+
+	done := make(chan struct{})
+	go func() {
+		srv.Handler().ServeHTTP(rr, req)
+		close(done)
+	}()
+
+	// Give the handler time to send immediate heartbeat
+	time.Sleep(50 * time.Millisecond)
+
+	// Cancel to close the connection
+	cancel()
+	<-done
+
+	// Check that heartbeat comment appears in the output
+	body := rr.Body.String()
+	if !strings.Contains(body, ": heartbeat") {
+		t.Errorf("expected heartbeat comment in SSE output, got: %s", body)
+	}
+
+	// Verify heartbeat is a comment (starts with ':') not an event
+	scanner := bufio.NewScanner(strings.NewReader(body))
+	foundHeartbeatComment := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, ": heartbeat") {
+			foundHeartbeatComment = true
+		}
+		// Heartbeat should not appear as "event: heartbeat"
+		if line == "event: heartbeat" {
+			t.Error("heartbeat should be a comment (': heartbeat'), not an event ('event: heartbeat')")
+		}
+	}
+	if !foundHeartbeatComment {
+		t.Error("heartbeat comment line (': heartbeat') not found in output")
+	}
+}

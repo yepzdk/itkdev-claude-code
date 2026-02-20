@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
+
+const sseHeartbeatInterval = 30 * time.Second
 
 // Event represents a server-sent event.
 type Event struct {
@@ -75,11 +78,21 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
+	flusher.Flush()
+
+	// Send initial heartbeat so EventSource.onopen fires immediately
+	if _, err := fmt.Fprintf(w, ": heartbeat\n\n"); err != nil {
+		return
+	}
 	flusher.Flush()
 
 	ch := s.sse.Subscribe()
 	defer s.sse.Unsubscribe(ch)
+
+	ticker := time.NewTicker(sseHeartbeatInterval)
+	defer ticker.Stop()
 
 	for {
 		select {
@@ -89,7 +102,14 @@ func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
-			fmt.Fprintf(w, "event: %s\ndata: %s\n\n", e.Type, e.Data)
+			if _, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", e.Type, e.Data); err != nil {
+				return
+			}
+			flusher.Flush()
+		case <-ticker.C:
+			if _, err := fmt.Fprintf(w, ": heartbeat\n\n"); err != nil {
+				return
+			}
 			flusher.Flush()
 		}
 	}

@@ -159,6 +159,10 @@ func (s *Server) handleMCPSaveMemory(_ context.Context, req mcp.CallToolRequest)
 		return mcpError(fmt.Sprintf("save_memory failed: %v", err)), nil
 	}
 
+	// Broadcast to SSE subscribers
+	eventData, _ := json.Marshal(map[string]any{"id": id, "type": "discovery", "title": title})
+	s.sse.Send(Event{Type: "observation", Data: string(eventData)})
+
 	return mcpJSON(map[string]int64{"id": id})
 }
 
