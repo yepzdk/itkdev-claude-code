@@ -93,10 +93,12 @@ background goroutine for the lifetime of the session.`,
 
 		// Register session with console
 		client := session.DefaultConsoleClient(actualPort)
-		client.Post("/api/sessions", map[string]string{
+		if resp, err := client.Post("/api/sessions", map[string]string{
 			"id":      sessionID,
 			"project": detectProject(),
-		})
+		}); err == nil && resp != nil {
+			resp.Body.Close()
+		}
 
 		// Build environment for Claude Code
 		env := session.BuildEnv(sessionID, actualPort, issueFlag)
@@ -129,7 +131,9 @@ background goroutine for the lifetime of the session.`,
 		exitErr := claudeCmd.Wait()
 
 		// End session in console
-		client.Post(fmt.Sprintf("/api/sessions/%s/end", sessionID), nil)
+		if resp, err := client.Post(fmt.Sprintf("/api/sessions/%s/end", sessionID), nil); err == nil && resp != nil {
+			resp.Body.Close()
+		}
 
 		// Stop console server
 		srv.Stop()
