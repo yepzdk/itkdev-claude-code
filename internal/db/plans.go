@@ -40,6 +40,34 @@ func (db *DB) UpdatePlanStatus(id int64, status string) error {
 	return nil
 }
 
+// RecentPlans returns the N most recent plans, ordered by creation time.
+func (db *DB) RecentPlans(limit int) ([]*Plan, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := db.conn.Query(
+		`SELECT id, path, session_id, status, created_at, updated_at
+		 FROM plans ORDER BY created_at DESC LIMIT ?`, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("recent plans: %w", err)
+	}
+	defer rows.Close()
+
+	var results []*Plan
+	for rows.Next() {
+		p := &Plan{}
+		var createdAt, updatedAt string
+		if err := rows.Scan(&p.ID, &p.Path, &p.SessionID, &p.Status, &createdAt, &updatedAt); err != nil {
+			return nil, fmt.Errorf("scan plan: %w", err)
+		}
+		p.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
+		p.UpdatedAt, _ = time.Parse("2006-01-02 15:04:05", updatedAt)
+		results = append(results, p)
+	}
+	return results, rows.Err()
+}
+
 // GetPlanByPath finds a plan by its file path.
 func (db *DB) GetPlanByPath(path string) (*Plan, error) {
 	p := &Plan{}
