@@ -76,8 +76,11 @@
     .card {
       padding: 0.75rem 1rem; background: #161b22;
       border: 1px solid #30363d; border-radius: 6px;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.5rem; cursor: pointer;
+      transition: border-color 0.15s;
     }
+    .card:hover { border-color: #58a6ff; }
+    .card.expanded { border-color: #58a6ff; }
     .card .type {
       color: #58a6ff; font-weight: 600; font-size: 0.8rem;
       text-transform: uppercase; letter-spacing: 0.025em;
@@ -90,6 +93,50 @@
     .card .meta {
       margin-top: 0.375rem; color: #8b949e; font-size: 0.75rem;
       display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+    .card .obs-detail {
+      margin-top: 0.75rem; padding-top: 0.75rem;
+      border-top: 1px solid #30363d;
+    }
+    .card .obs-detail .obs-full-text {
+      white-space: pre-wrap; word-break: break-word;
+      font-size: 0.875rem; line-height: 1.5; margin-bottom: 0.5rem;
+    }
+    .card .obs-detail .obs-meta-table {
+      font-size: 0.8rem; color: #8b949e;
+      display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem;
+    }
+    .card .obs-detail .obs-meta-label {
+      color: #8b949e; font-weight: 600;
+    }
+    .card .obs-detail .obs-meta-value {
+      word-break: break-all;
+    }
+    .card .obs-detail .obs-timeline {
+      margin-top: 0.75rem; padding-top: 0.5rem;
+      border-top: 1px solid #21262d;
+    }
+    .card .obs-detail .obs-timeline-header {
+      font-size: 0.8rem; color: #8b949e; margin-bottom: 0.5rem;
+    }
+    .card .obs-detail .timeline-item {
+      padding: 0.375rem 0.5rem; font-size: 0.8rem;
+      border-left: 2px solid #30363d; margin-bottom: 0.25rem;
+      margin-left: 0.25rem;
+    }
+    .card .obs-detail .timeline-item.current {
+      border-left-color: #58a6ff; background: #0d1117;
+      border-radius: 0 4px 4px 0;
+    }
+    .card .obs-detail .timeline-item .tl-type {
+      color: #58a6ff; font-weight: 600; text-transform: uppercase;
+      font-size: 0.7rem; letter-spacing: 0.025em;
+    }
+    .card .obs-detail .timeline-item .tl-title {
+      color: #c9d1d9;
+    }
+    .card .obs-detail .timeline-item .tl-time {
+      color: #8b949e; font-size: 0.7rem;
     }
 
     /* Placeholder */
@@ -460,14 +507,93 @@
     function createEventCard(data, timestamp) {
       const div = document.createElement('div');
       div.className = 'card';
+      const obsId = data.ID || data.id;
+      if (obsId) div.dataset.obsId = obsId;
       div.innerHTML =
         '<div class="type">' + esc(data.Type || data.type || 'observation') + '</div>' +
         '<div class="title">' + esc(data.Title || data.title || '') + '</div>' +
         (data.Text || data.text ? '<div class="text">' + esc(data.Text || data.text) + '</div>' : '') +
         '<div class="meta"><span>' + esc(timestamp) + '</span>' +
         (data.Project || data.project ? '<span>' + esc(data.Project || data.project) + '</span>' : '') +
-        '</div>';
+        '</div>' +
+        '<div class="obs-detail" style="display:none"></div>';
+      if (obsId) {
+        div.addEventListener('click', function() {
+          const detail = this.querySelector('.obs-detail');
+          const isExpanded = this.classList.contains('expanded');
+          if (isExpanded) {
+            this.classList.remove('expanded');
+            detail.style.display = 'none';
+            return;
+          }
+          this.classList.add('expanded');
+          detail.style.display = 'block';
+          if (detail.dataset.loaded === 'true') return;
+          loadObservationDetail(obsId, detail);
+        });
+      }
       return div;
+    }
+
+    async function loadObservationDetail(obsId, container) {
+      container.innerHTML = '<div class="obs-timeline-header">Loading...</div>';
+      try {
+        const [obsResp, tlResp] = await Promise.all([
+          fetch('/api/observations/' + obsId),
+          fetch('/api/observations/timeline/' + obsId + '?before=3&after=3')
+        ]);
+        if (!obsResp.ok) {
+          container.innerHTML = '<div class="obs-timeline-header">Failed to load observation.</div>';
+          container.dataset.loaded = 'true';
+          return;
+        }
+        const obs = await obsResp.json();
+        let html = '';
+
+        // Full text
+        if (obs.Text) {
+          html += '<div class="obs-full-text">' + esc(obs.Text) + '</div>';
+        }
+
+        // Metadata table
+        html += '<div class="obs-meta-table">';
+        html += '<span class="obs-meta-label">Type</span><span class="obs-meta-value">' + esc(obs.Type || '') + '</span>';
+        if (obs.Project) {
+          html += '<span class="obs-meta-label">Project</span><span class="obs-meta-value">' + esc(obs.Project) + '</span>';
+        }
+        if (obs.SessionID) {
+          html += '<span class="obs-meta-label">Session</span><span class="obs-meta-value" style="font-family:monospace;font-size:0.75rem">' + esc(obs.SessionID) + '</span>';
+        }
+        html += '<span class="obs-meta-label">Created</span><span class="obs-meta-value">' + esc(fmtTime(obs.CreatedAt)) + '</span>';
+        if (obs.Metadata && obs.Metadata !== '{}' && obs.Metadata !== '') {
+          html += '<span class="obs-meta-label">Metadata</span><span class="obs-meta-value" style="font-family:monospace;font-size:0.75rem">' + esc(obs.Metadata) + '</span>';
+        }
+        html += '</div>';
+
+        // Timeline
+        if (tlResp.ok) {
+          const timeline = await tlResp.json();
+          if (timeline && timeline.length > 1) {
+            html += '<div class="obs-timeline">';
+            html += '<div class="obs-timeline-header">Timeline</div>';
+            for (const t of timeline) {
+              const isCurrent = t.ID === obs.ID;
+              html += '<div class="timeline-item' + (isCurrent ? ' current' : '') + '">';
+              html += '<span class="tl-type">' + esc(t.Type || '') + '</span> ';
+              html += '<span class="tl-title">' + esc(t.Title || '') + '</span>';
+              html += '<div class="tl-time">' + esc(fmtTime(t.CreatedAt)) + '</div>';
+              html += '</div>';
+            }
+            html += '</div>';
+          }
+        }
+
+        container.innerHTML = html;
+        container.dataset.loaded = 'true';
+      } catch (err) {
+        container.innerHTML = '<div class="obs-timeline-header">Failed to load details.</div>';
+        console.error('Observation detail error:', err);
+      }
     }
 
     async function loadRecent() {
