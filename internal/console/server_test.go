@@ -485,6 +485,50 @@ func TestPlanMissingPath(t *testing.T) {
 	}
 }
 
+func TestObservationFilters(t *testing.T) {
+	srv := testServer(t)
+
+	// Empty database returns empty arrays
+	rr := doRequest(t, srv, "GET", "/api/observations/filters", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var resp map[string][]string
+	json.NewDecoder(rr.Body).Decode(&resp)
+	if len(resp["types"]) != 0 {
+		t.Errorf("expected empty types, got %v", resp["types"])
+	}
+	if len(resp["projects"]) != 0 {
+		t.Errorf("expected empty projects, got %v", resp["projects"])
+	}
+
+	// Add observations with different types and projects
+	doRequest(t, srv, "POST", "/api/observations", map[string]string{
+		"session_id": "s1", "type": "discovery", "title": "a",
+		"text": "a", "project": "backend",
+	})
+	doRequest(t, srv, "POST", "/api/observations", map[string]string{
+		"session_id": "s1", "type": "bugfix", "title": "b",
+		"text": "b", "project": "frontend",
+	})
+	doRequest(t, srv, "POST", "/api/observations", map[string]string{
+		"session_id": "s1", "type": "discovery", "title": "c",
+		"text": "c", "project": "backend",
+	})
+
+	rr = doRequest(t, srv, "GET", "/api/observations/filters", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	json.NewDecoder(rr.Body).Decode(&resp)
+	if len(resp["types"]) != 2 {
+		t.Errorf("got %d types, want 2: %v", len(resp["types"]), resp["types"])
+	}
+	if len(resp["projects"]) != 2 {
+		t.Errorf("got %d projects, want 2: %v", len(resp["projects"]), resp["projects"])
+	}
+}
+
 func TestTimeline(t *testing.T) {
 	srv := testServer(t)
 
