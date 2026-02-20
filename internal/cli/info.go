@@ -110,7 +110,6 @@ func buildInfo() InfoData {
 			{"spec-plan-validator", "Validate plan file structure"},
 			{"spec-verify-validator", "Validate verification results"},
 			{"task-tracker", "Track task creation and updates"},
-			{"notify", "Desktop notifications on stop"},
 		},
 		MCPTools: []InfoEntry{
 			{"search", "Semantic search across observations"},
