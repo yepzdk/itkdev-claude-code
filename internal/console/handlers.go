@@ -149,6 +149,17 @@ func (s *Server) handleCreatePlan(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		return
 	}
+
+	// Broadcast to SSE subscribers
+	eventData, _ := json.Marshal(map[string]any{
+		"action":     "created",
+		"id":         id,
+		"path":       req.Path,
+		"session_id": req.SessionID,
+		"status":     req.Status,
+	})
+	s.sse.Send(Event{Type: "plan", Data: string(eventData)})
+
 	writeJSON(w, http.StatusCreated, map[string]int64{"id": id})
 }
 
@@ -234,5 +245,14 @@ func (s *Server) handleUpdatePlanStatus(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
 		return
 	}
+
+	// Broadcast to SSE subscribers
+	eventData, _ := json.Marshal(map[string]any{
+		"action": "status_changed",
+		"id":     id,
+		"status": req.Status,
+	})
+	s.sse.Send(Event{Type: "plan", Data: string(eventData)})
+
 	writeJSON(w, http.StatusOK, map[string]string{"status": req.Status})
 }

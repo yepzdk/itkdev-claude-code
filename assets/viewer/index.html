@@ -158,7 +158,8 @@
     .badge-active { background: #1b4332; color: #3fb950; }
     .badge-ended { background: #3d1f00; color: #d29922; }
     .badge-pending { background: #0c2d6b; color: #58a6ff; }
-    .badge-completed { background: #1b4332; color: #3fb950; }
+    .badge-in-progress { background: #3d1f00; color: #d29922; }
+    .badge-completed, .badge-complete { background: #1b4332; color: #3fb950; }
 
     /* Summary card */
     .summary-card {
@@ -308,8 +309,15 @@
         <!-- Plans -->
         <div id="section-plans" class="section">
           <div class="content-inner">
-            <div style="margin-bottom:1rem">
+            <div class="filter-row">
               <button class="btn btn-secondary" id="refresh-plans">Refresh</button>
+              <label>Status:</label>
+              <select id="plans-status-filter" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:0.5rem 0.75rem;border-radius:6px;font-size:0.875rem;font-family:inherit;">
+                <option value="">All</option>
+                <option value="PENDING">Pending</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="COMPLETE">Complete</option>
+              </select>
             </div>
             <div id="plans-list">
               <div class="placeholder">Loading plans...</div>
@@ -440,6 +448,34 @@
           console.error('Parse event error:', err);
         }
       });
+      es.addEventListener('plan', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.action === 'created') {
+            // Add new plan to the cached list and re-render
+            allPlans.unshift({
+              ID: data.id, Path: data.path, SessionID: data.session_id,
+              Status: data.status, CreatedAt: new Date().toISOString(),
+              UpdatedAt: new Date().toISOString(),
+            });
+            if (document.getElementById('section-plans').classList.contains('active')) {
+              renderPlans();
+            }
+          } else if (data.action === 'status_changed') {
+            // Update plan status in cached list and re-render
+            const plan = allPlans.find(p => p.ID === data.id);
+            if (plan) {
+              plan.Status = data.status;
+              plan.UpdatedAt = new Date().toISOString();
+              if (document.getElementById('section-plans').classList.contains('active')) {
+                renderPlans();
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Parse plan event error:', err);
+        }
+      });
     }
 
     // --- Search ---
@@ -545,31 +581,57 @@
 
     // --- Plans ---
     const plansList = document.getElementById('plans-list');
+    const plansStatusFilter = document.getElementById('plans-status-filter');
+    let allPlans = [];
+
     document.getElementById('refresh-plans').addEventListener('click', loadPlans);
+    plansStatusFilter.addEventListener('change', renderPlans);
+
+    function planStatusClass(status) {
+      switch (status) {
+        case 'COMPLETE': case 'COMPLETED': return 'badge-complete';
+        case 'IN_PROGRESS': return 'badge-in-progress';
+        default: return 'badge-pending';
+      }
+    }
+
+    function createPlanCard(p) {
+      const div = document.createElement('div');
+      div.className = 'plan-card';
+      div.dataset.planId = p.ID;
+      const updated = p.UpdatedAt && p.UpdatedAt !== p.CreatedAt
+        ? '<span>Updated: ' + fmtTime(p.UpdatedAt) + '</span>' : '';
+      div.innerHTML =
+        '<div class="plan-path">' + esc(p.Path) + '</div>' +
+        '<div class="plan-meta">' +
+          '<span class="badge ' + planStatusClass(p.Status) + '">' + esc(p.Status) + '</span>' +
+          '<span>Session: <a href="#sessions" style="color:#58a6ff;text-decoration:none;" title="' + esc(p.SessionID) + '">' + esc(fmtShortId(p.SessionID)) + '</a></span>' +
+          '<span>Created: ' + fmtTime(p.CreatedAt) + '</span>' +
+          updated +
+        '</div>';
+      return div;
+    }
+
+    function renderPlans() {
+      const filter = plansStatusFilter.value;
+      const filtered = filter ? allPlans.filter(p => p.Status === filter) : allPlans;
+      if (filtered.length === 0) {
+        plansList.innerHTML = '<div class="placeholder">' + (filter ? 'No ' + filter.toLowerCase() + ' plans.' : 'No plans yet.') + '</div>';
+        return;
+      }
+      plansList.innerHTML = '';
+      for (const p of filtered) {
+        plansList.appendChild(createPlanCard(p));
+      }
+    }
 
     async function loadPlans() {
       plansList.innerHTML = '<div class="placeholder">Loading plans...</div>';
       try {
         const resp = await fetch('/api/plans?limit=50');
         const plans = await resp.json();
-        if (!plans || plans.length === 0) {
-          plansList.innerHTML = '<div class="placeholder">No plans yet.</div>';
-          return;
-        }
-        plansList.innerHTML = '';
-        for (const p of plans) {
-          const statusClass = p.Status === 'COMPLETED' ? 'badge-completed' : 'badge-pending';
-          const div = document.createElement('div');
-          div.className = 'plan-card';
-          div.innerHTML =
-            '<div class="plan-path">' + esc(p.Path) + '</div>' +
-            '<div class="plan-meta">' +
-              '<span class="badge ' + statusClass + '">' + esc(p.Status) + '</span>' +
-              '<span>Session: ' + esc(fmtShortId(p.SessionID)) + '</span>' +
-              '<span>' + fmtTime(p.CreatedAt) + '</span>' +
-            '</div>';
-          plansList.appendChild(div);
-        }
+        allPlans = plans || [];
+        renderPlans();
       } catch (err) {
         plansList.innerHTML = '<div class="placeholder">Failed to load plans.</div>';
         console.error('Plans error:', err);

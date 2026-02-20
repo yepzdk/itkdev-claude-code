@@ -364,6 +364,17 @@ func TestPlanRoundTrip(t *testing.T) {
 	json.NewDecoder(rr.Body).Decode(&created)
 	id := int64(created["id"].(float64))
 
+	// List plans
+	rr = doRequest(t, srv, "GET", "/api/plans", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("list status = %d", rr.Code)
+	}
+	var plans []any
+	json.NewDecoder(rr.Body).Decode(&plans)
+	if len(plans) != 1 {
+		t.Errorf("list returned %d plans, want 1", len(plans))
+	}
+
 	// Get by path
 	rr = doRequest(t, srv, "GET", "/api/plans/by-path?path=docs/plans/test.md", nil)
 	if rr.Code != http.StatusOK {
@@ -376,6 +387,85 @@ func TestPlanRoundTrip(t *testing.T) {
 	})
 	if rr.Code != http.StatusOK {
 		t.Fatalf("update status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+}
+
+func TestPlanSSEEvents(t *testing.T) {
+	srv := testServer(t)
+
+	// Subscribe to SSE events before creating a plan
+	ch := srv.sse.Subscribe()
+	defer srv.sse.Unsubscribe(ch)
+
+	// Create plan — should broadcast a "plan" event
+	rr := doRequest(t, srv, "POST", "/api/plans", map[string]string{
+		"path":       "docs/plans/sse-test.md",
+		"session_id": "sess-sse",
+		"status":     "PENDING",
+	})
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("create status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var created map[string]any
+	json.NewDecoder(rr.Body).Decode(&created)
+	id := int64(created["id"].(float64))
+
+	// Read the create event
+	e := <-ch
+	if e.Type != "plan" {
+		t.Errorf("event type = %q, want plan", e.Type)
+	}
+	var eventData map[string]any
+	json.Unmarshal([]byte(e.Data), &eventData)
+	if eventData["action"] != "created" {
+		t.Errorf("action = %q, want created", eventData["action"])
+	}
+	if eventData["path"] != "docs/plans/sse-test.md" {
+		t.Errorf("path = %q, want docs/plans/sse-test.md", eventData["path"])
+	}
+
+	// Update status — should broadcast another "plan" event
+	rr = doRequest(t, srv, "PATCH", fmt.Sprintf("/api/plans/%d/status", id), map[string]string{
+		"status": "IN_PROGRESS",
+	})
+	if rr.Code != http.StatusOK {
+		t.Fatalf("update status = %d", rr.Code)
+	}
+
+	e = <-ch
+	if e.Type != "plan" {
+		t.Errorf("event type = %q, want plan", e.Type)
+	}
+	json.Unmarshal([]byte(e.Data), &eventData)
+	if eventData["action"] != "status_changed" {
+		t.Errorf("action = %q, want status_changed", eventData["action"])
+	}
+	if eventData["status"] != "IN_PROGRESS" {
+		t.Errorf("status = %q, want IN_PROGRESS", eventData["status"])
+	}
+}
+
+func TestPlanListWithLimit(t *testing.T) {
+	srv := testServer(t)
+
+	// Create multiple plans
+	for i := 0; i < 3; i++ {
+		doRequest(t, srv, "POST", "/api/plans", map[string]string{
+			"path":       fmt.Sprintf("docs/plans/plan-%d.md", i),
+			"session_id": "sess-1",
+			"status":     "PENDING",
+		})
+	}
+
+	// List with limit
+	rr := doRequest(t, srv, "GET", "/api/plans?limit=2", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("list status = %d", rr.Code)
+	}
+	var plans []any
+	json.NewDecoder(rr.Body).Decode(&plans)
+	if len(plans) != 2 {
+		t.Errorf("list returned %d plans with limit=2, want 2", len(plans))
 	}
 }
 
