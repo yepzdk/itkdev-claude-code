@@ -3,87 +3,583 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ITKdev Claude Code — Memory Viewer</title>
+  <title>ITKdev Claude Code — Console</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
       background: #0d1117; color: #c9d1d9;
-      display: flex; flex-direction: column; min-height: 100vh;
     }
-    header {
-      padding: 1rem 2rem; border-bottom: 1px solid #30363d;
-      display: flex; align-items: center; gap: 1rem;
+
+    /* Layout */
+    .app { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px; flex-shrink: 0;
+      background: #161b22; border-right: 1px solid #30363d;
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
     }
-    header h1 { font-size: 1.2rem; color: #58a6ff; }
-    #status { font-size: 0.85rem; color: #8b949e; }
-    main { flex: 1; padding: 2rem; }
-    #events {
-      max-width: 800px; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 0.5rem;
+    .sidebar-header {
+      padding: 1.25rem 1rem; border-bottom: 1px solid #30363d;
     }
-    .event {
+    .sidebar-header h1 {
+      font-size: 1rem; color: #58a6ff; font-weight: 600;
+      white-space: nowrap;
+    }
+    #status {
+      display: block; font-size: 0.75rem; color: #8b949e; margin-top: 0.25rem;
+    }
+    .sidebar nav { flex: 1; padding: 0.5rem 0; }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.625rem;
+      padding: 0.5rem 1rem; color: #8b949e;
+      text-decoration: none; font-size: 0.875rem;
+      border-left: 2px solid transparent;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
+      cursor: pointer;
+    }
+    .nav-item:hover { color: #c9d1d9; background: #21262d; }
+    .nav-item.active {
+      color: #58a6ff; background: #0d1117;
+      border-left-color: #58a6ff;
+    }
+    .nav-icon { font-size: 1rem; width: 1.25rem; text-align: center; flex-shrink: 0; }
+
+    /* Content */
+    .content {
+      flex: 1; margin-left: 220px; min-height: 100vh;
+      display: flex; flex-direction: column;
+    }
+    .content-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid #30363d;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .content-header h2 { font-size: 1.1rem; font-weight: 600; }
+    .hamburger {
+      display: none; background: none; border: 1px solid #30363d;
+      color: #c9d1d9; font-size: 1.25rem; padding: 0.25rem 0.5rem;
+      border-radius: 6px; cursor: pointer;
+    }
+    .hamburger:hover { background: #21262d; }
+    .content-body {
+      flex: 1; padding: 1.5rem; overflow-y: auto;
+    }
+    .content-inner { max-width: 800px; }
+
+    /* Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Cards */
+    .card {
       padding: 0.75rem 1rem; background: #161b22;
       border: 1px solid #30363d; border-radius: 6px;
+      margin-bottom: 0.5rem;
     }
-    .event .type { color: #58a6ff; font-weight: 600; font-size: 0.85rem; }
-    .event .title { margin-top: 0.25rem; }
-    .event .time { color: #8b949e; font-size: 0.8rem; margin-top: 0.25rem; }
+    .card .type {
+      color: #58a6ff; font-weight: 600; font-size: 0.8rem;
+      text-transform: uppercase; letter-spacing: 0.025em;
+    }
+    .card .title { margin-top: 0.25rem; }
+    .card .text {
+      margin-top: 0.375rem; color: #8b949e; font-size: 0.875rem;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .card .meta {
+      margin-top: 0.375rem; color: #8b949e; font-size: 0.75rem;
+      display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+
+    /* Placeholder */
     .placeholder {
       text-align: center; color: #8b949e; margin-top: 4rem;
-      font-size: 1.1rem;
+      font-size: 1rem;
+    }
+
+    /* Search form */
+    .search-form {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .search-form input[type="text"],
+    .search-form input[type="date"],
+    .search-form select {
+      background: #0d1117; border: 1px solid #30363d; color: #c9d1d9;
+      padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.875rem;
+      font-family: inherit;
+    }
+    .search-form input[type="text"] { flex: 1; min-width: 200px; }
+    .search-form input[type="text"]:focus,
+    .search-form input[type="date"]:focus,
+    .search-form select:focus {
+      outline: none; border-color: #58a6ff;
+    }
+    .btn {
+      background: #238636; color: #fff; border: none;
+      padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+    }
+    .btn:hover { background: #2ea043; }
+    .btn-secondary {
+      background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
+    }
+    .btn-secondary:hover { background: #30363d; }
+
+    /* Filter row */
+    .filter-row {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-row label { font-size: 0.8rem; color: #8b949e; }
+
+    /* Session card */
+    .session-card {
+      padding: 1rem; background: #161b22;
+      border: 1px solid #30363d; border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .session-card .session-id {
+      font-size: 0.8rem; color: #58a6ff; font-family: monospace;
+    }
+    .session-card .session-project {
+      font-weight: 600; margin-top: 0.25rem;
+    }
+    .session-card .session-meta {
+      margin-top: 0.375rem; color: #8b949e; font-size: 0.8rem;
+      display: flex; gap: 1rem; flex-wrap: wrap;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-block; padding: 0.125rem 0.5rem;
+      border-radius: 10px; font-size: 0.75rem; font-weight: 600;
+    }
+    .badge-active { background: #1b4332; color: #3fb950; }
+    .badge-ended { background: #3d1f00; color: #d29922; }
+    .badge-pending { background: #0c2d6b; color: #58a6ff; }
+    .badge-completed { background: #1b4332; color: #3fb950; }
+
+    /* Summary card */
+    .summary-card {
+      padding: 1rem; background: #161b22;
+      border: 1px solid #30363d; border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .summary-card .summary-text {
+      white-space: pre-wrap; word-break: break-word; line-height: 1.5;
+    }
+    .summary-card .summary-meta {
+      margin-top: 0.5rem; color: #8b949e; font-size: 0.75rem;
+      display: flex; gap: 1rem;
+    }
+
+    /* Plan card */
+    .plan-card {
+      padding: 1rem; background: #161b22;
+      border: 1px solid #30363d; border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+    .plan-card .plan-path {
+      font-family: monospace; font-size: 0.85rem; color: #c9d1d9;
+      word-break: break-all;
+    }
+    .plan-card .plan-meta {
+      margin-top: 0.375rem; color: #8b949e; font-size: 0.75rem;
+      display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+    }
+
+    /* Overlay for mobile */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 9;
+    }
+    .sidebar-overlay.visible { display: block; }
+
+    /* Live indicator */
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px;
+      background: #3fb950; border-radius: 50%; margin-right: 0.375rem;
+      vertical-align: middle;
+    }
+    .live-dot.disconnected { background: #f85149; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .content { margin-left: 0; }
+      .hamburger { display: block; }
+      .sidebar-overlay.visible { display: block; }
+      .content-body { padding: 1rem; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>ITKdev Claude Code</h1>
-    <span id="status">Connecting...</span>
-  </header>
-  <main>
-    <div id="events">
-      <div class="placeholder">Waiting for observations...</div>
+  <div class="sidebar-overlay" id="overlay"></div>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <h1>ITKdev Claude Code</h1>
+        <span id="status"><span class="live-dot disconnected"></span>Connecting...</span>
+      </div>
+      <nav>
+        <a href="#feed" class="nav-item active" data-section="feed">
+          <span class="nav-icon">&#9679;</span>Live Feed
+        </a>
+        <a href="#search" class="nav-item" data-section="search">
+          <span class="nav-icon">&#8981;</span>Search
+        </a>
+        <a href="#sessions" class="nav-item" data-section="sessions">
+          <span class="nav-icon">&#9655;</span>Sessions
+        </a>
+        <a href="#summaries" class="nav-item" data-section="summaries">
+          <span class="nav-icon">&#9776;</span>Summaries
+        </a>
+        <a href="#plans" class="nav-item" data-section="plans">
+          <span class="nav-icon">&#9744;</span>Plans
+        </a>
+      </nav>
+    </aside>
+
+    <div class="content">
+      <div class="content-header">
+        <button class="hamburger" id="hamburger" aria-label="Toggle navigation">&#9776;</button>
+        <h2 id="section-title">Live Feed</h2>
+      </div>
+      <div class="content-body">
+        <!-- Live Feed -->
+        <div id="section-feed" class="section active">
+          <div class="content-inner">
+            <div id="events">
+              <div class="placeholder">Waiting for observations...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div id="section-search" class="section">
+          <div class="content-inner">
+            <form class="search-form" id="search-form">
+              <input type="text" id="search-query" placeholder="Search observations..." required>
+              <button type="submit" class="btn">Search</button>
+            </form>
+            <div class="filter-row">
+              <label>Type:</label>
+              <input type="text" id="search-type" placeholder="e.g. discovery" style="width:120px">
+              <label>Project:</label>
+              <input type="text" id="search-project" placeholder="project" style="width:120px">
+              <label>From:</label>
+              <input type="date" id="search-date-start">
+              <label>To:</label>
+              <input type="date" id="search-date-end">
+            </div>
+            <div id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Sessions -->
+        <div id="section-sessions" class="section">
+          <div class="content-inner">
+            <div style="margin-bottom:1rem">
+              <button class="btn btn-secondary" id="refresh-sessions">Refresh</button>
+            </div>
+            <div id="sessions-list">
+              <div class="placeholder">Loading sessions...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summaries -->
+        <div id="section-summaries" class="section">
+          <div class="content-inner">
+            <div style="margin-bottom:1rem">
+              <button class="btn btn-secondary" id="refresh-summaries">Refresh</button>
+            </div>
+            <div id="summaries-list">
+              <div class="placeholder">Loading summaries...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plans -->
+        <div id="section-plans" class="section">
+          <div class="content-inner">
+            <div style="margin-bottom:1rem">
+              <button class="btn btn-secondary" id="refresh-plans">Refresh</button>
+            </div>
+            <div id="plans-list">
+              <div class="placeholder">Loading plans...</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  </main>
+  </div>
+
   <script>
+    // --- Utilities ---
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+    function fmtTime(s) {
+      if (!s) return '';
+      const d = new Date(s);
+      return isNaN(d) ? s : d.toLocaleString();
+    }
+    function fmtShortId(id) {
+      if (!id) return '';
+      return id.length > 12 ? id.slice(0, 12) + '...' : id;
+    }
+
+    // --- Router ---
+    const titles = {
+      feed: 'Live Feed', search: 'Search', sessions: 'Sessions',
+      summaries: 'Summaries', plans: 'Plans'
+    };
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.section');
+    const sectionTitle = document.getElementById('section-title');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('overlay');
+    const hamburger = document.getElementById('hamburger');
+
+    function navigate(hash) {
+      const section = hash.replace('#', '') || 'feed';
+      if (!titles[section]) return;
+
+      navItems.forEach(n => n.classList.toggle('active', n.dataset.section === section));
+      sections.forEach(s => s.classList.toggle('active', s.id === 'section-' + section));
+      sectionTitle.textContent = titles[section];
+
+      // Close mobile sidebar
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+
+      // Load data when switching to a section
+      if (section === 'sessions') loadSessions();
+      else if (section === 'summaries') loadSummaries();
+      else if (section === 'plans') loadPlans();
+    }
+
+    window.addEventListener('hashchange', () => navigate(location.hash));
+    navItems.forEach(n => n.addEventListener('click', (e) => {
+      e.preventDefault();
+      location.hash = n.dataset.section;
+    }));
+
+    // Mobile sidebar toggle
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('visible');
+    });
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+    });
+
+    // --- Live Feed ---
     const eventsEl = document.getElementById('events');
     const statusEl = document.getElementById('status');
     let hasEvents = false;
 
+    function clearPlaceholder() {
+      if (!hasEvents) {
+        eventsEl.innerHTML = '';
+        hasEvents = true;
+      }
+    }
+
+    function createEventCard(data, timestamp) {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML =
+        '<div class="type">' + esc(data.Type || data.type || 'observation') + '</div>' +
+        '<div class="title">' + esc(data.Title || data.title || '') + '</div>' +
+        (data.Text || data.text ? '<div class="text">' + esc(data.Text || data.text) + '</div>' : '') +
+        '<div class="meta"><span>' + esc(timestamp) + '</span>' +
+        (data.Project || data.project ? '<span>' + esc(data.Project || data.project) + '</span>' : '') +
+        '</div>';
+      return div;
+    }
+
+    async function loadRecent() {
+      try {
+        const resp = await fetch('/api/observations/recent?limit=50');
+        if (!resp.ok) return;
+        const observations = await resp.json();
+        if (!observations || observations.length === 0) return;
+        clearPlaceholder();
+        for (const obs of observations) {
+          eventsEl.appendChild(createEventCard(obs, fmtTime(obs.CreatedAt)));
+        }
+      } catch (err) {
+        console.error('Load recent error:', err);
+      }
+    }
+
     function connect() {
       const es = new EventSource('/api/events');
-      es.onopen = () => { statusEl.textContent = 'Connected'; };
+      es.onopen = () => {
+        statusEl.innerHTML = '<span class="live-dot"></span>Connected';
+      };
       es.onerror = () => {
-        statusEl.textContent = 'Disconnected — retrying...';
+        statusEl.innerHTML = '<span class="live-dot disconnected"></span>Disconnected — retrying...';
       };
       es.addEventListener('observation', (e) => {
-        if (!hasEvents) {
-          eventsEl.innerHTML = '';
-          hasEvents = true;
-        }
+        clearPlaceholder();
         try {
           const data = JSON.parse(e.data);
-          const div = document.createElement('div');
-          div.className = 'event';
-          div.innerHTML = `
-            <div class="type">${escHtml(data.type || 'observation')}</div>
-            <div class="title">${escHtml(data.title || '')}</div>
-            <div class="time">${new Date().toLocaleTimeString()}</div>
-          `;
-          eventsEl.prepend(div);
+          eventsEl.prepend(createEventCard(data, new Date().toLocaleTimeString()));
         } catch (err) {
           console.error('Parse event error:', err);
         }
       });
     }
 
-    function escHtml(s) {
-      const d = document.createElement('div');
-      d.textContent = s;
-      return d.innerHTML;
+    // --- Search ---
+    const searchForm = document.getElementById('search-form');
+    const searchResults = document.getElementById('search-results');
+
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const q = document.getElementById('search-query').value.trim();
+      if (!q) return;
+
+      const params = new URLSearchParams({ q });
+      const type = document.getElementById('search-type').value.trim();
+      const project = document.getElementById('search-project').value.trim();
+      const dateStart = document.getElementById('search-date-start').value;
+      const dateEnd = document.getElementById('search-date-end').value;
+      if (type) params.set('type', type);
+      if (project) params.set('project', project);
+      if (dateStart) params.set('dateStart', dateStart);
+      if (dateEnd) params.set('dateEnd', dateEnd);
+
+      searchResults.innerHTML = '<div class="placeholder">Searching...</div>';
+      try {
+        const resp = await fetch('/api/observations/search?' + params);
+        const results = await resp.json();
+        if (!results || results.length === 0) {
+          searchResults.innerHTML = '<div class="placeholder">No results found.</div>';
+          return;
+        }
+        searchResults.innerHTML = '';
+        for (const obs of results) {
+          searchResults.appendChild(createEventCard(obs, fmtTime(obs.CreatedAt)));
+        }
+      } catch (err) {
+        searchResults.innerHTML = '<div class="placeholder">Search failed.</div>';
+        console.error('Search error:', err);
+      }
+    });
+
+    // --- Sessions ---
+    const sessionsList = document.getElementById('sessions-list');
+    document.getElementById('refresh-sessions').addEventListener('click', loadSessions);
+
+    async function loadSessions() {
+      sessionsList.innerHTML = '<div class="placeholder">Loading sessions...</div>';
+      try {
+        const resp = await fetch('/api/sessions');
+        const sessions = await resp.json();
+        if (!sessions || sessions.length === 0) {
+          sessionsList.innerHTML = '<div class="placeholder">No active sessions.</div>';
+          return;
+        }
+        sessionsList.innerHTML = '';
+        for (const s of sessions) {
+          const div = document.createElement('div');
+          div.className = 'session-card';
+          div.innerHTML =
+            '<div class="session-id">' + esc(s.ID) + '</div>' +
+            '<div class="session-project">' + esc(s.Project || 'No project') + '</div>' +
+            '<div class="session-meta">' +
+              '<span><span class="badge badge-active">active</span></span>' +
+              '<span>Messages: ' + (s.MessageCount || 0) + '</span>' +
+              '<span>Started: ' + fmtTime(s.StartedAt) + '</span>' +
+            '</div>';
+          sessionsList.appendChild(div);
+        }
+      } catch (err) {
+        sessionsList.innerHTML = '<div class="placeholder">Failed to load sessions.</div>';
+        console.error('Sessions error:', err);
+      }
     }
 
+    // --- Summaries ---
+    const summariesList = document.getElementById('summaries-list');
+    document.getElementById('refresh-summaries').addEventListener('click', loadSummaries);
+
+    async function loadSummaries() {
+      summariesList.innerHTML = '<div class="placeholder">Loading summaries...</div>';
+      try {
+        const resp = await fetch('/api/summaries/recent?limit=20');
+        const summaries = await resp.json();
+        if (!summaries || summaries.length === 0) {
+          summariesList.innerHTML = '<div class="placeholder">No summaries yet.</div>';
+          return;
+        }
+        summariesList.innerHTML = '';
+        for (const s of summaries) {
+          const div = document.createElement('div');
+          div.className = 'summary-card';
+          div.innerHTML =
+            '<div class="summary-text">' + esc(s.Text) + '</div>' +
+            '<div class="summary-meta">' +
+              '<span>Session: ' + esc(fmtShortId(s.SessionID)) + '</span>' +
+              '<span>' + fmtTime(s.CreatedAt) + '</span>' +
+            '</div>';
+          summariesList.appendChild(div);
+        }
+      } catch (err) {
+        summariesList.innerHTML = '<div class="placeholder">Failed to load summaries.</div>';
+        console.error('Summaries error:', err);
+      }
+    }
+
+    // --- Plans ---
+    const plansList = document.getElementById('plans-list');
+    document.getElementById('refresh-plans').addEventListener('click', loadPlans);
+
+    async function loadPlans() {
+      plansList.innerHTML = '<div class="placeholder">Loading plans...</div>';
+      try {
+        const resp = await fetch('/api/plans?limit=50');
+        const plans = await resp.json();
+        if (!plans || plans.length === 0) {
+          plansList.innerHTML = '<div class="placeholder">No plans yet.</div>';
+          return;
+        }
+        plansList.innerHTML = '';
+        for (const p of plans) {
+          const statusClass = p.Status === 'COMPLETED' ? 'badge-completed' : 'badge-pending';
+          const div = document.createElement('div');
+          div.className = 'plan-card';
+          div.innerHTML =
+            '<div class="plan-path">' + esc(p.Path) + '</div>' +
+            '<div class="plan-meta">' +
+              '<span class="badge ' + statusClass + '">' + esc(p.Status) + '</span>' +
+              '<span>Session: ' + esc(fmtShortId(p.SessionID)) + '</span>' +
+              '<span>' + fmtTime(p.CreatedAt) + '</span>' +
+            '</div>';
+          plansList.appendChild(div);
+        }
+      } catch (err) {
+        plansList.innerHTML = '<div class="placeholder">Failed to load plans.</div>';
+        console.error('Plans error:', err);
+      }
+    }
+
+    // --- Init ---
+    loadRecent();
     connect();
+    navigate(location.hash || '#feed');
   </script>
 </body>
 </html>

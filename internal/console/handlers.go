@@ -152,6 +152,17 @@ func (s *Server) handleCreatePlan(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]int64{"id": id})
 }
 
+func (s *Server) handleListPlans(w http.ResponseWriter, r *http.Request) {
+	limit := int(parseID(r.URL.Query().Get("limit")))
+	results, err := s.db.RecentPlans(limit)
+	if err != nil {
+		s.logger.Error("list plans", "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	writeJSON(w, http.StatusOK, results)
+}
+
 func (s *Server) handleGetPlanByPath(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Query().Get("path")
 	if path == "" {

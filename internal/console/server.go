@@ -130,6 +130,7 @@ func (s *Server) registerRoutes() {
 		r.Get("/summaries/recent", s.handleRecentSummaries)
 
 		r.Post("/plans", s.handleCreatePlan)
+		r.Get("/plans", s.handleListPlans)
 		r.Get("/plans/by-path", s.handleGetPlanByPath)
 		r.Patch("/plans/{id}/status", s.handleUpdatePlanStatus)
 
