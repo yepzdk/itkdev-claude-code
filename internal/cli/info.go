@@ -93,6 +93,7 @@ func buildInfo() InfoData {
 			{"icc install", "Set up project configuration"},
 			{"icc serve", "Standalone console server"},
 			{"icc info", "Show this capabilities reference"},
+			{"icc check", "Check dependency status"},
 			{"icc greet", "Print the welcome banner"},
 			{"icc worktree", "Git worktree management"},
 			{"icc session list", "List sessions"},

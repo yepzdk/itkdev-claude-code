@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/itk-dev/itkdev-claude-code/internal/config"
@@ -43,8 +44,25 @@ background goroutine for the lifetime of the session.`,
 			return fmt.Errorf("auto-install failed: %w", err)
 		}
 
-		// Check for required plugins
-		checkRequiredPlugins(logger)
+		// Run preflight dependency checks
+		preflightResults := session.PreflightCheck(logger)
+		var missingDeps []session.CheckResult
+		for _, r := range preflightResults {
+			if r.Status == session.StatusMissing {
+				missingDeps = append(missingDeps, r)
+			} else if r.Status == session.StatusWarning {
+				fmt.Fprintf(os.Stderr, "⚠ %s: %s\n", r.Name, r.Message)
+			}
+		}
+
+		// If any required dependencies are missing, return aggregated error
+		if len(missingDeps) > 0 {
+			var depNames []string
+			for _, d := range missingDeps {
+				depNames = append(depNames, fmt.Sprintf("%s (%s)", d.Name, d.Message))
+			}
+			return fmt.Errorf("required dependencies missing: %s", strings.Join(depNames, ", "))
+		}
 
 		// Find Claude Code
 		claudePath, err := session.FindClaudeCode()
@@ -274,22 +292,6 @@ func autoInstallIfNeeded(logger *slog.Logger) error {
 
 	logger.Debug("auto-install completed successfully")
 	return nil
-}
-
-// checkRequiredPlugins warns on stderr if any required Claude Code plugins
-// are not installed. This is a non-blocking check — it never prevents launch.
-func checkRequiredPlugins(logger *slog.Logger) {
-	missing, err := config.MissingPlugins()
-	if err != nil {
-		logger.Debug("could not check plugins", "error", err)
-		return
-	}
-	for _, req := range missing {
-		fmt.Fprintf(os.Stderr, "⚠ Required plugin %q is not installed.\n", req.Name)
-		fmt.Fprintf(os.Stderr, "  Install it in Claude Code with:\n")
-		fmt.Fprintf(os.Stderr, "    /plugin marketplace add itk-dev/itkdev-claude-plugins\n")
-		fmt.Fprintf(os.Stderr, "    /plugin install %s@%s\n\n", req.Name, req.Marketplace)
-	}
 }
 
 func init() {
