@@ -143,7 +143,13 @@
     .session-card {
       padding: 1rem; background: #161b22;
       border: 1px solid #30363d; border-radius: 6px;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.5rem; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .session-card:hover { border-color: #58a6ff; }
+    .session-card.expanded { border-color: #58a6ff; }
+    .session-card .session-header {
+      display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
     }
     .session-card .session-id {
       font-size: 0.8rem; color: #58a6ff; font-family: monospace;
@@ -153,7 +159,17 @@
     }
     .session-card .session-meta {
       margin-top: 0.375rem; color: #8b949e; font-size: 0.8rem;
-      display: flex; gap: 1rem; flex-wrap: wrap;
+      display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+    }
+    .session-card .session-duration {
+      font-size: 0.8rem; color: #8b949e;
+    }
+    .session-observations {
+      margin-top: 0.75rem; padding-top: 0.75rem;
+      border-top: 1px solid #30363d;
+    }
+    .session-observations .obs-header {
+      font-size: 0.8rem; color: #8b949e; margin-bottom: 0.5rem;
     }
 
     /* Status badge */
@@ -314,8 +330,15 @@
         <!-- Sessions -->
         <div id="section-sessions" class="section">
           <div class="content-inner">
-            <div style="margin-bottom:1rem">
+            <div class="filter-row">
               <button class="btn btn-secondary" id="refresh-sessions">Refresh</button>
+              <label>Status:</label>
+              <select id="sessions-status-filter" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:0.5rem 0.75rem;border-radius:6px;font-size:0.875rem;font-family:inherit;">
+                <option value="">All</option>
+                <option value="active">Active</option>
+                <option value="ended">Ended</option>
+              </select>
+              <span id="sessions-count" style="font-size:0.85rem;color:#8b949e"></span>
             </div>
             <div id="sessions-list">
               <div class="placeholder">Loading sessions...</div>
@@ -601,31 +624,124 @@
 
     // --- Sessions ---
     const sessionsList = document.getElementById('sessions-list');
+    const sessionsCount = document.getElementById('sessions-count');
+    const sessionsStatusFilter = document.getElementById('sessions-status-filter');
+    let allSessions = [];
+
     document.getElementById('refresh-sessions').addEventListener('click', loadSessions);
+    sessionsStatusFilter.addEventListener('change', renderSessions);
+
+    function fmtDuration(startStr, endStr) {
+      const start = new Date(startStr);
+      const end = endStr ? new Date(endStr) : new Date();
+      if (isNaN(start)) return '';
+      const diffMs = end - start;
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 60) return mins + 'm';
+      const hours = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      if (hours < 24) return hours + 'h ' + remMins + 'm';
+      const days = Math.floor(hours / 24);
+      return days + 'd ' + (hours % 24) + 'h';
+    }
+
+    function createSessionCard(s) {
+      const div = document.createElement('div');
+      div.className = 'session-card';
+      div.dataset.sessionId = s.ID;
+      const isActive = !s.EndedAt;
+      const badge = isActive
+        ? '<span class="badge badge-active">active</span>'
+        : '<span class="badge badge-ended">ended</span>';
+      const duration = fmtDuration(s.StartedAt, s.EndedAt);
+      const durationSpan = duration ? '<span class="session-duration">' + esc(duration) + '</span>' : '';
+      div.innerHTML =
+        '<div class="session-header">' +
+          '<div class="session-project">' + esc(s.Project || 'No project') + '</div>' +
+          badge +
+          durationSpan +
+        '</div>' +
+        '<div class="session-id">' + esc(s.ID) + '</div>' +
+        '<div class="session-meta">' +
+          '<span>Messages: ' + (s.MessageCount || 0) + '</span>' +
+          '<span>Started: ' + fmtTime(s.StartedAt) + '</span>' +
+          (s.EndedAt ? '<span>Ended: ' + fmtTime(s.EndedAt) + '</span>' : '') +
+        '</div>' +
+        '<div class="session-observations" style="display:none"></div>';
+
+      div.addEventListener('click', function() {
+        const obsContainer = this.querySelector('.session-observations');
+        const isExpanded = this.classList.contains('expanded');
+        if (isExpanded) {
+          this.classList.remove('expanded');
+          obsContainer.style.display = 'none';
+          return;
+        }
+        this.classList.add('expanded');
+        obsContainer.style.display = 'block';
+        if (obsContainer.dataset.loaded === 'true') return;
+        loadSessionObservations(s.ID, obsContainer);
+      });
+
+      return div;
+    }
+
+    async function loadSessionObservations(sessionId, container) {
+      container.innerHTML = '<div class="obs-header">Loading observations...</div>';
+      try {
+        const resp = await fetch('/api/sessions/' + encodeURIComponent(sessionId) + '/observations?limit=50');
+        if (!resp.ok) {
+          container.innerHTML = '<div class="obs-header">Failed to load observations.</div>';
+          container.dataset.loaded = 'true';
+          return;
+        }
+        const observations = await resp.json();
+        if (!observations || observations.length === 0) {
+          container.innerHTML = '<div class="obs-header">No observations for this session.</div>';
+          container.dataset.loaded = 'true';
+          return;
+        }
+        container.innerHTML = '<div class="obs-header">' + observations.length + ' observation' + (observations.length !== 1 ? 's' : '') + '</div>';
+        for (const obs of observations) {
+          container.appendChild(createEventCard(obs, fmtTime(obs.CreatedAt)));
+        }
+        container.dataset.loaded = 'true';
+      } catch (err) {
+        container.innerHTML = '<div class="obs-header">Failed to load observations.</div>';
+        console.error('Session observations error:', err);
+      }
+    }
+
+    function renderSessions() {
+      const filter = sessionsStatusFilter.value;
+      let filtered = allSessions;
+      if (filter === 'active') filtered = allSessions.filter(s => !s.EndedAt);
+      else if (filter === 'ended') filtered = allSessions.filter(s => s.EndedAt);
+
+      const total = allSessions.length;
+      const shown = filtered.length;
+      sessionsCount.textContent = filter
+        ? shown + ' of ' + total + ' session' + (total !== 1 ? 's' : '')
+        : total + ' session' + (total !== 1 ? 's' : '');
+
+      if (filtered.length === 0) {
+        sessionsList.innerHTML = '<div class="placeholder">' + (filter ? 'No ' + filter + ' sessions.' : 'No sessions yet.') + '</div>';
+        return;
+      }
+      sessionsList.innerHTML = '';
+      for (const s of filtered) {
+        sessionsList.appendChild(createSessionCard(s));
+      }
+    }
 
     async function loadSessions() {
       sessionsList.innerHTML = '<div class="placeholder">Loading sessions...</div>';
+      sessionsCount.textContent = '';
       try {
-        const resp = await fetch('/api/sessions');
+        const resp = await fetch('/api/sessions?all=true&limit=50');
         const sessions = await resp.json();
-        if (!sessions || sessions.length === 0) {
-          sessionsList.innerHTML = '<div class="placeholder">No active sessions.</div>';
-          return;
-        }
-        sessionsList.innerHTML = '';
-        for (const s of sessions) {
-          const div = document.createElement('div');
-          div.className = 'session-card';
-          div.innerHTML =
-            '<div class="session-id">' + esc(s.ID) + '</div>' +
-            '<div class="session-project">' + esc(s.Project || 'No project') + '</div>' +
-            '<div class="session-meta">' +
-              '<span><span class="badge badge-active">active</span></span>' +
-              '<span>Messages: ' + (s.MessageCount || 0) + '</span>' +
-              '<span>Started: ' + fmtTime(s.StartedAt) + '</span>' +
-            '</div>';
-          sessionsList.appendChild(div);
-        }
+        allSessions = sessions || [];
+        renderSessions();
       } catch (err) {
         sessionsList.innerHTML = '<div class="placeholder">Failed to load sessions.</div>';
         console.error('Sessions error:', err);

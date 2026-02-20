@@ -35,7 +35,15 @@ func (s *Server) handleCreateSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleListSessions(w http.ResponseWriter, r *http.Request) {
-	sessions, err := s.db.ListActiveSessions()
+	var sessions []*db.Session
+	var err error
+
+	if r.URL.Query().Get("all") == "true" {
+		limit := int(parseID(r.URL.Query().Get("limit")))
+		sessions, err = s.db.ListAllSessions(limit)
+	} else {
+		sessions, err = s.db.ListActiveSessions()
+	}
 	if err != nil {
 		s.logger.Error("list sessions", "error", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
@@ -57,6 +65,18 @@ func (s *Server) handleGetSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, sess)
+}
+
+func (s *Server) handleSessionObservations(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	limit := int(parseID(r.URL.Query().Get("limit")))
+	observations, err := s.db.ListBySessionID(id, limit)
+	if err != nil {
+		s.logger.Error("session observations", "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	writeJSON(w, http.StatusOK, observations)
 }
 
 func (s *Server) handleEndSession(w http.ResponseWriter, r *http.Request) {

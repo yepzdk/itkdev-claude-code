@@ -113,3 +113,36 @@ func (db *DB) ListActiveSessions() ([]*Session, error) {
 	}
 	return results, rows.Err()
 }
+
+// ListAllSessions returns all sessions (active and ended), ordered by most recent first.
+func (db *DB) ListAllSessions(limit int) ([]*Session, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+
+	rows, err := db.conn.Query(
+		`SELECT id, project, started_at, ended_at, message_count, metadata
+		 FROM sessions ORDER BY started_at DESC LIMIT ?`, limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list all sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var results []*Session
+	for rows.Next() {
+		s := &Session{}
+		var startedAt string
+		var endedAt sql.NullString
+		if err := rows.Scan(&s.ID, &s.Project, &startedAt, &endedAt, &s.MessageCount, &s.Metadata); err != nil {
+			return nil, fmt.Errorf("scan session: %w", err)
+		}
+		s.StartedAt, _ = time.Parse("2006-01-02 15:04:05", startedAt)
+		if endedAt.Valid {
+			t, _ := time.Parse("2006-01-02 15:04:05", endedAt.String)
+			s.EndedAt = &t
+		}
+		results = append(results, s)
+	}
+	return results, rows.Err()
+}

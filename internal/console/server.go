@@ -124,6 +124,7 @@ func (s *Server) registerRoutes() {
 		r.Get("/sessions", s.handleListSessions)
 		r.Post("/sessions/cleanup", s.handleCleanupSessions)
 		r.Get("/sessions/{id}", s.handleGetSession)
+		r.Get("/sessions/{id}/observations", s.handleSessionObservations)
 		r.Post("/sessions/{id}/end", s.handleEndSession)
 		r.Post("/sessions/{id}/message-count", s.handleIncrementMessageCount)
 
