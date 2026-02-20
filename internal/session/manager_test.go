@@ -79,7 +79,7 @@ func TestReadContextPercentageMissing(t *testing.T) {
 }
 
 func TestBuildEnv(t *testing.T) {
-	env := BuildEnv("test-session-123", 41777)
+	env := BuildEnv("test-session-123", 41777, "")
 
 	found := map[string]string{}
 	for _, e := range env {

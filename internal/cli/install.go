@@ -37,6 +37,7 @@ Each step supports rollback on failure.`,
 			&steps.ShellConfig{},
 			&steps.ClaudeFiles{},
 			&steps.ConfigFiles{},
+			&steps.Plugins{},
 			&steps.VSCode{},
 			&steps.Finalize{},
 		)
