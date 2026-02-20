@@ -87,6 +87,41 @@ func TestBuildTruncatesToTokenBudget(t *testing.T) {
 	}
 }
 
+func TestBuildIncludesCapabilities(t *testing.T) {
+	b := NewBuilder(4000)
+
+	// Even with no observations or summaries, capabilities should not appear
+	// (the builder returns empty when both inputs are nil)
+	result := b.Build(nil, nil)
+	if result != "" {
+		t.Errorf("expected empty string for nil inputs, got %q", result)
+	}
+
+	// With observations, capabilities section should be appended
+	obs := []*db.Observation{
+		{ID: 1, Type: "discovery", Title: "Test", Text: "Test observation"},
+	}
+	result = b.Build(obs, nil)
+
+	if !containsAll(result, "Active Features", "Quality Hooks", "Persistent Memory", "/spec") {
+		t.Errorf("result missing capabilities section: %s", result)
+	}
+}
+
+func TestBuildCapabilitiesOmittedWhenBudgetTight(t *testing.T) {
+	b := NewBuilder(50) // very tight budget
+
+	obs := []*db.Observation{
+		{ID: 1, Type: "discovery", Title: "Important", Text: "Critical finding that takes up budget"},
+	}
+	result := b.Build(obs, nil)
+
+	// Capabilities should be omitted when budget is too tight
+	if containsAll(result, "Active Features") {
+		t.Error("capabilities should be omitted when token budget is tight")
+	}
+}
+
 func TestEstimateTokens(t *testing.T) {
 	tests := []struct {
 		input string

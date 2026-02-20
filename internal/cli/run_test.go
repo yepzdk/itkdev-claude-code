@@ -42,7 +42,7 @@ func TestUpdateSettingsAnnouncement(t *testing.T) {
 			t.Fatalf("expected 1 announcement, got %v", result["companyAnnouncements"])
 		}
 
-		want := "Console: http://localhost:42000 | /spec — plan, build & verify"
+		want := "Console: http://localhost:42000 | /spec — plan, build & verify | Hooks: lint, TDD, branch-guard | Memory: save_memory, search | icc info — full reference"
 		if announcements[0] != want {
 			t.Errorf("announcement = %q, want %q", announcements[0], want)
 		}

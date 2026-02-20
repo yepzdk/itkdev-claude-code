@@ -187,7 +187,7 @@ func updateSettingsAnnouncement(path string, port int, logger *slog.Logger) {
 	}
 
 	settings["companyAnnouncements"] = []string{
-		"Console: http://localhost:" + strconv.Itoa(port) + " | /spec — plan, build & verify",
+		"Console: http://localhost:" + strconv.Itoa(port) + " | /spec — plan, build & verify | Hooks: lint, TDD, branch-guard | Memory: save_memory, search | icc info — full reference",
 	}
 
 	out, err := json.MarshalIndent(settings, "", "  ")

@@ -75,6 +75,20 @@ func (b *Builder) Build(observations []*db.Observation, summaries []*db.Summary)
 		}
 	}
 
+	// Always append a capabilities summary so Claude knows what's available
+	capabilities := `## Active Features
+- **Quality Hooks**: file-checker (lint/format), tdd-enforcer, branch-guard (no commits to main)
+- **Context Management**: context-monitor with Endless Mode at 90%
+- **Persistent Memory**: save_memory() to record discoveries, search() to find them
+- **Workflows**: /spec (plan → implement → verify), /itkdev-issue-workflow
+- **Web Console**: observations, sessions, plans, search at the console URL
+- **Worktree Isolation**: icc worktree for safe parallel work`
+
+	capTokens := EstimateTokens(capabilities)
+	if usedTokens+capTokens <= b.maxTokens {
+		parts = append(parts, capabilities)
+	}
+
 	if len(parts) == 0 {
 		return ""
 	}
