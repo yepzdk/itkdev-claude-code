@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/worktree"
+	"github.com/itk-dev/itkdev-claude-code/internal/worktree"
 )
 
 func TestCreate_WithDirtyWorkingTree_Staged(t *testing.T) {

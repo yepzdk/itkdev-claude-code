@@ -16,7 +16,7 @@ func TestGreetCommand(t *testing.T) {
 	}
 
 	output := buf.String()
-	if !strings.Contains(output, "Picky Claude") {
+	if !strings.Contains(output, "ITKdev Claude Code") {
 		t.Errorf("output missing product name, got: %q", output)
 	}
 }

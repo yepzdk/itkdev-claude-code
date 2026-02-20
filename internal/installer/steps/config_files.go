@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 // ConfigFiles writes settings.json and .mcp.json to the project's .claude/
@@ -57,7 +57,7 @@ func (c *ConfigFiles) Rollback(ctx *installer.Context) {
 	}
 }
 
-// resolveBinaryPath returns the full path to the current picky binary.
+// resolveBinaryPath returns the full path to the current icc binary.
 // Falls back to just the binary name if the path can't be determined.
 func resolveBinaryPath() string {
 	exe, err := os.Executable()

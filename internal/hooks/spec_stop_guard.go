@@ -47,12 +47,12 @@ func specStopGuardCheck(input *Input) *string {
 	case "PENDING":
 		msg := "Stop blocked: /spec workflow is active (Status: PENDING). " +
 			"Continue implementing the plan tasks. " +
-			"If context is high, use picky send-clear for handoff."
+			"If context is high, use icc send-clear for handoff."
 		return &msg
 	case "COMPLETE":
 		msg := "Stop blocked: /spec workflow needs verification (Status: COMPLETE). " +
 			"Run spec-verify before stopping. " +
-			"If context is high, use picky send-clear for handoff."
+			"If context is high, use icc send-clear for handoff."
 		return &msg
 	default:
 		return nil

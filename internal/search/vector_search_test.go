@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 func testDB(t *testing.T) *db.DB {

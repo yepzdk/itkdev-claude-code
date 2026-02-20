@@ -6,16 +6,18 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 )
 
 // NotifyEvent identifies the type of notification.
 type NotifyEvent string
 
 const (
-	EventContextWarning  NotifyEvent = "context-warning"
-	EventSessionComplete NotifyEvent = "session-complete"
+	EventContextWarning   NotifyEvent = "context-warning"
+	EventSessionComplete  NotifyEvent = "session-complete"
 	EventVerificationDone NotifyEvent = "verification-done"
-	EventPlanApproved    NotifyEvent = "plan-approved"
+	EventPlanApproved     NotifyEvent = "plan-approved"
 )
 
 // Send sends a desktop notification for the given event with a detail message.
@@ -57,7 +59,7 @@ func eventStrings(event NotifyEvent, detail string) (string, string) {
 	case EventPlanApproved:
 		return "Plan Approved", detail
 	default:
-		return "Picky Claude", detail
+		return config.DisplayName, detail
 	}
 }
 

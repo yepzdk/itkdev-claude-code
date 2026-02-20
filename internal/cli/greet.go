@@ -4,19 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 	"github.com/spf13/cobra"
 )
 
 var greetName string
 
 const banner = `
- ____  _      _
-|  _ \(_) ___| | ___   _
-| |_) | |/ __| |/ / | | |
-|  __/| | (__|   <| |_| |
-|_|   |_|\___|_|\_\\__, |
-                    |___/
+ ___ ____ ____
+|_ _/ ___/ ___|
+ | | |  | |
+ | | |__| |___
+|___\____\____|
 `
 
 var greetCmd = &cobra.Command{

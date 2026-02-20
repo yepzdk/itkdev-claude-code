@@ -1,6 +1,6 @@
 # Usage Guide
 
-This guide covers how to install, configure, and use Picky Claude for quality-enforced development with Claude Code.
+This guide covers how to install, configure, and use ITKdev Claude Code for quality-enforced development with Claude Code.
 
 ## Table of Contents
 
@@ -22,19 +22,19 @@ This guide covers how to install, configure, and use Picky Claude for quality-en
 ### Building from Source
 
 ```bash
-git clone https://github.com/jesperpedersen/picky-claude.git
-cd picky-claude
+git clone https://github.com/itk-dev/itkdev-claude-code.git
+cd itkdev-claude-code
 make build
 ```
 
-This produces `bin/picky`. Add it to your PATH:
+This produces `bin/icc`. Add it to your PATH:
 
 ```bash
 # Option 1: Copy to system path
-cp bin/picky /usr/local/bin/
+cp bin/icc /usr/local/bin/
 
 # Option 2: Add bin/ to PATH in your shell config
-export PATH="$PATH:/path/to/picky-claude/bin"
+export PATH="$PATH:/path/to/itkdev-claude-code/bin"
 ```
 
 ### Cross-Platform Builds
@@ -51,7 +51,7 @@ Navigate to your project and run the installer:
 
 ```bash
 cd your-project
-picky install
+icc install
 ```
 
 The installer runs these steps in order:
@@ -69,8 +69,8 @@ If any step fails, all previously completed steps are rolled back automatically.
 Skip specific steps with flags:
 
 ```bash
-picky install --skip-prereqs    # Skip prerequisite checks
-picky install --skip-deps       # Skip dependency installation
+icc install --skip-prereqs    # Skip prerequisite checks
+icc install --skip-deps       # Skip dependency installation
 ```
 
 ---
@@ -80,7 +80,7 @@ picky install --skip-deps       # Skip dependency installation
 ### Standard Launch
 
 ```bash
-picky run
+icc run
 ```
 
 This:
@@ -93,8 +93,8 @@ This:
 All Claude Code arguments are passed through:
 
 ```bash
-picky run --model opus     # Pass flags to Claude Code
-picky run -p "fix the bug" # Pass a prompt
+icc run --model opus     # Pass flags to Claude Code
+icc run -p "fix the bug" # Pass a prompt
 ```
 
 ### Console Server Only
@@ -102,21 +102,21 @@ picky run -p "fix the bug" # Pass a prompt
 For debugging or development, run the console server standalone:
 
 ```bash
-picky serve
+icc serve
 ```
 
-The server runs on `http://localhost:41777` (configurable via `PICKY_PORT`).
+The server runs on `http://localhost:41777` (configurable via `ICC_PORT`).
 
 ---
 
 ## Hook System
 
-Hooks are quality gates that run automatically during Claude Code sessions. They are configured in `.claude/settings.json` (or `hooks.json`) and call back into the `picky` binary.
+Hooks are quality gates that run automatically during Claude Code sessions. They are configured in `.claude/settings.json` (or `hooks.json`) and call back into the `icc` binary.
 
 ### How Hooks Work
 
 1. Claude Code triggers a hook event (e.g., a file was written)
-2. Claude Code calls `picky hook <name>` with event data on stdin
+2. Claude Code calls `icc hook <name>` with event data on stdin
 3. The hook processes the event and returns a result on stdout
 4. Claude Code acts on the result (show message, block action, etc.)
 
@@ -223,7 +223,7 @@ The embedded web viewer is served at the root (`/`). It shows a real-time stream
 
 ### Database
 
-SQLite database stored at `~/.picky/db/picky.db`. Tables:
+SQLite database stored at `~/.icc/db/icc.db`. Tables:
 
 - `observations` — Discoveries, changes, decisions
 - `sessions` — Session tracking
@@ -244,7 +244,7 @@ Endless Mode enables seamless session continuation when Claude Code's context wi
 2. At 80%, it warns to wrap up current work
 3. At 90%, it triggers mandatory handoff:
    - Claude writes a `continuation.md` file with session state
-   - Claude calls `picky send-clear <plan.md>` (or `--general`)
+   - Claude calls `icc send-clear <plan.md>` (or `--general`)
 4. `send-clear` executes the restart sequence:
    - Waits 10s for memory capture
    - Writes clear signal to session directory
@@ -256,11 +256,11 @@ Endless Mode enables seamless session continuation when Claude Code's context wi
 
 ```bash
 # Human-readable
-picky check-context
+icc check-context
 # Output: Context: 47.0% (OK)
 
 # JSON
-picky check-context --json
+icc check-context --json
 # Output: {"status":"OK","percentage":47.0}
 ```
 
@@ -268,10 +268,10 @@ picky check-context --json
 
 ```bash
 # With a plan file
-picky send-clear docs/plans/2026-02-16-feature.md
+icc send-clear docs/plans/2026-02-16-feature.md
 
 # Without a plan
-picky send-clear --general
+icc send-clear --general
 ```
 
 ---
@@ -284,34 +284,34 @@ Git worktrees let you develop in isolation without affecting the main branch.
 
 ```bash
 # Create an isolated worktree
-picky worktree create my-feature
+icc worktree create my-feature
 # Creates .worktrees/spec-my-feature-<hash>/ with branch spec/my-feature
 
 # Check if a worktree exists
-picky worktree detect my-feature
+icc worktree detect my-feature
 
 # List changed files
-picky worktree diff my-feature
+icc worktree diff my-feature
 
 # Squash merge back to base branch
-picky worktree sync my-feature
+icc worktree sync my-feature
 
 # Remove worktree and branch
-picky worktree cleanup my-feature
+icc worktree cleanup my-feature
 
 # Show active worktree info
-picky worktree status
+icc worktree status
 ```
 
 All commands support `--json` for structured output.
 
 ### Workflow
 
-1. `picky worktree create <slug>` — Creates worktree, auto-stashes any dirty state
+1. `icc worktree create <slug>` — Creates worktree, auto-stashes any dirty state
 2. All work happens in the worktree directory
-3. `picky worktree diff <slug>` — Review changes
-4. `picky worktree sync <slug>` — Squash merge to base branch
-5. `picky worktree cleanup <slug>` — Remove worktree
+3. `icc worktree diff <slug>` — Review changes
+4. `icc worktree sync <slug>` — Squash merge to base branch
+5. `icc worktree cleanup <slug>` — Remove worktree
 
 ---
 
@@ -329,7 +329,7 @@ Optimized for token efficiency:
 
 ### MCP Tools
 
-When running via `picky run`, Claude Code can use MCP tools to interact with memory:
+When running via `icc run`, Claude Code can use MCP tools to interact with memory:
 
 - `search(query, limit, type, project)` — Find observations
 - `timeline(anchor, depth_before, depth_after)` — Context around an observation
@@ -350,7 +350,7 @@ The `/spec` command in Claude Code triggers a structured development workflow:
 2. **Implement** — TDD loop for each task in the plan
 3. **Verify** — Run tests, code review, compliance check
 
-Picky Claude provides hooks that enforce this workflow:
+ITKdev Claude Code provides hooks that enforce this workflow:
 - `spec-plan-validator` validates plan file structure
 - `spec-verify-validator` validates verification results
 - `spec-stop-guard` prevents premature stops during the workflow
@@ -365,24 +365,24 @@ Plans are stored as markdown files in `docs/plans/` and tracked in the database.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PICKY_HOME` | `~/.picky` | Base directory for data, database, sessions, logs |
-| `PICKY_PORT` | `41777` | Console server HTTP port |
-| `PICKY_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
-| `PICKY_SESSION_ID` | auto-generated | Session identifier (set by `picky run`) |
-| `PICKY_NO_UPDATE` | — | Set to any value to disable auto-update checks |
+| `ICC_HOME` | `~/.icc` | Base directory for data, database, sessions, logs |
+| `ICC_PORT` | `41777` | Console server HTTP port |
+| `ICC_LOG_LEVEL` | `info` | Log level: debug, info, warn, error |
+| `ICC_SESSION_ID` | auto-generated | Session identifier (set by `icc run`) |
+| `ICC_NO_UPDATE` | — | Set to any value to disable auto-update checks |
 
 ### Directory Structure
 
 ```
-~/.picky/                    # Data directory (PICKY_HOME)
+~/.icc/                      # Data directory (ICC_HOME)
 ├── db/
-│   └── picky.db            # SQLite database
+│   └── icc.db              # SQLite database
 ├── sessions/
 │   └── <session-id>/       # Per-session state files
 └── logs/                    # Log files
 
 your-project/
-├── .claude/                 # Created by picky install
+├── .claude/                 # Created by icc install
 │   ├── rules/              # Markdown rule files
 │   ├── commands/           # Spec commands
 │   ├── agents/             # Agent definitions
@@ -398,7 +398,7 @@ your-project/
 
 ### "claude code not found"
 
-`picky run` can't locate the `claude` binary. Make sure Claude Code is installed and on your PATH:
+`icc run` can't locate the `claude` binary. Make sure Claude Code is installed and on your PATH:
 
 ```bash
 which claude
@@ -412,10 +412,10 @@ Check if port 41777 is already in use:
 lsof -i :41777
 ```
 
-Change the port with `PICKY_PORT`:
+Change the port with `ICC_PORT`:
 
 ```bash
-PICKY_PORT=42000 picky run
+ICC_PORT=42000 icc run
 ```
 
 ### Hooks aren't running
@@ -429,22 +429,22 @@ cat .claude/settings.json | grep hooks
 If missing, re-run the installer:
 
 ```bash
-picky install --skip-prereqs --skip-deps
+icc install --skip-prereqs --skip-deps
 ```
 
 ### Database errors
 
-The SQLite database is at `~/.picky/db/picky.db`. To reset:
+The SQLite database is at `~/.icc/db/icc.db`. To reset:
 
 ```bash
-rm ~/.picky/db/picky.db
+rm ~/.icc/db/icc.db
 ```
 
 A fresh database is created automatically on next run.
 
 ### Build fails with Go version error
 
-Picky Claude requires Go 1.25+. Check your version:
+ITKdev Claude Code requires Go 1.25+. Check your version:
 
 ```bash
 go version

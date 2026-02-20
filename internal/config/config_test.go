@@ -28,26 +28,26 @@ func TestHomeDir_Default(t *testing.T) {
 }
 
 func TestHomeDir_EnvOverride(t *testing.T) {
-	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-picky")
+	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-icc")
 	got := HomeDir()
-	if got != "/tmp/test-picky" {
-		t.Errorf("HomeDir() = %q, want %q", got, "/tmp/test-picky")
+	if got != "/tmp/test-icc" {
+		t.Errorf("HomeDir() = %q, want %q", got, "/tmp/test-icc")
 	}
 }
 
 func TestDBPath(t *testing.T) {
-	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-picky")
+	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-icc")
 	got := DBPath()
-	want := "/tmp/test-picky/db/picky.db"
+	want := "/tmp/test-icc/db/icc.db"
 	if got != want {
 		t.Errorf("DBPath() = %q, want %q", got, want)
 	}
 }
 
 func TestSessionDir(t *testing.T) {
-	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-picky")
+	t.Setenv(EnvPrefix+"_HOME", "/tmp/test-icc")
 	got := SessionDir("abc123")
-	want := "/tmp/test-picky/sessions/abc123"
+	want := "/tmp/test-icc/sessions/abc123"
 	if got != want {
 		t.Errorf("SessionDir() = %q, want %q", got, want)
 	}

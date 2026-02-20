@@ -6,18 +6,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
-const pickyMarker = "# Added by " + config.DisplayName
+const iccMarker = "# Added by " + config.DisplayName
 
 // shellBlock returns the lines to add to shell config files.
 func shellBlock(binDir string) string {
-	return fmt.Sprintf("\n%s\nexport PATH=\"%s:$PATH\"\n", pickyMarker, binDir)
+	return fmt.Sprintf("\n%s\nexport PATH=\"%s:$PATH\"\n", iccMarker, binDir)
 }
 
-// ShellConfig adds the picky binary directory to PATH in shell config files.
+// ShellConfig adds the icc binary directory to PATH in shell config files.
 type ShellConfig struct {
 	shellFiles []string          // Override for testing; nil = auto-detect
 	backups    map[string][]byte // Original content for rollback
@@ -51,7 +51,7 @@ func (s *ShellConfig) Run(ctx *installer.Context) error {
 		}
 
 		content := string(data)
-		if strings.Contains(content, pickyMarker) {
+		if strings.Contains(content, iccMarker) {
 			ctx.Messages = append(ctx.Messages, fmt.Sprintf("  ✓ %s already configured", filepath.Base(path)))
 			continue
 		}

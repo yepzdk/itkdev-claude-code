@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 )
 
 func TestCurrentThreshold(t *testing.T) {
@@ -111,7 +111,7 @@ func TestResolveSessionDir(t *testing.T) {
 		}
 	}()
 
-	// Without PICKY_SESSION_ID set, should use "default"
+	// Without ICC_SESSION_ID set, should use "default"
 	origSID := os.Getenv(config.EnvPrefix + "_SESSION_ID")
 	os.Unsetenv(config.EnvPrefix + "_SESSION_ID")
 	defer func() {
@@ -126,7 +126,7 @@ func TestResolveSessionDir(t *testing.T) {
 		t.Errorf("resolveSessionDir() without env = %q, want %q", got, want)
 	}
 
-	// With PICKY_SESSION_ID set, should use that
+	// With ICC_SESSION_ID set, should use that
 	os.Setenv(config.EnvPrefix+"_SESSION_ID", "my-session-123")
 	got = resolveSessionDir()
 	want = config.SessionDir("my-session-123")

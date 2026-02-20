@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 )
 
 // ClearSignal is written to the session directory to trigger an Endless Mode
-// restart. The `picky run` command watches for this file.
+// restart. The `icc run` command watches for this file.
 type ClearSignal struct {
 	PlanPath string `json:"plan_path"`
 	General  bool   `json:"general"`

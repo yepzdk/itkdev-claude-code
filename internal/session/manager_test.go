@@ -13,8 +13,8 @@ func TestNewIDFromPID(t *testing.T) {
 		t.Fatal("expected non-empty session ID")
 	}
 	// Should contain the PID prefix
-	if !strings.HasPrefix(id, "picky-") {
-		t.Errorf("ID %q does not start with 'picky-'", id)
+	if !strings.HasPrefix(id, "icc-") {
+		t.Errorf("ID %q does not start with 'icc-'", id)
 	}
 }
 
@@ -89,13 +89,13 @@ func TestBuildEnv(t *testing.T) {
 		}
 	}
 
-	if v := found["PICKY_SESSION_ID"]; v != "test-session-123" {
-		t.Errorf("PICKY_SESSION_ID = %q, want test-session-123", v)
+	if v := found["ICC_SESSION_ID"]; v != "test-session-123" {
+		t.Errorf("ICC_SESSION_ID = %q, want test-session-123", v)
 	}
-	if v := found["CLAUDE_CODE_TASK_LIST_ID"]; v != "picky-test-session-123" {
-		t.Errorf("CLAUDE_CODE_TASK_LIST_ID = %q, want picky-test-session-123", v)
+	if v := found["CLAUDE_CODE_TASK_LIST_ID"]; v != "icc-test-session-123" {
+		t.Errorf("CLAUDE_CODE_TASK_LIST_ID = %q, want icc-test-session-123", v)
 	}
-	if v := found["PICKY_PORT"]; v != "41777" {
-		t.Errorf("PICKY_PORT = %q, want 41777", v)
+	if v := found["ICC_PORT"]; v != "41777" {
+		t.Errorf("ICC_PORT = %q, want 41777", v)
 	}
 }

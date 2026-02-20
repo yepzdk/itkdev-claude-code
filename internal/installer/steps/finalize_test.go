@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 func TestFinalize_Name(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 func TestVSCode_Name(t *testing.T) {

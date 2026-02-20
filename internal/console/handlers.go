@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	ctxbuilder "github.com/jesperpedersen/picky-claude/internal/console/context"
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	ctxbuilder "github.com/itk-dev/itkdev-claude-code/internal/console/context"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {

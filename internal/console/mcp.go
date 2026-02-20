@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )

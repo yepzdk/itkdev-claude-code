@@ -6,8 +6,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/statusline"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/statusline"
 	"github.com/spf13/cobra"
 )
 

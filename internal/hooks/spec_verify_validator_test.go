@@ -94,7 +94,7 @@ func TestSpecVerifyValidator_NonVerifyFile(t *testing.T) {
 func TestSpecVerifyValidator_VerifyFile(t *testing.T) {
 	content := `{"verdict": "pass", "findings": []}`
 	input := map[string]string{
-		"file_path": "/tmp/.picky/sessions/123/verify-compliance.json",
+		"file_path": "/tmp/.icc/sessions/123/verify-compliance.json",
 		"content":   content,
 	}
 	data, _ := json.Marshal(input)

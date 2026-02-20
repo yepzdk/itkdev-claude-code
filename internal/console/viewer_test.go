@@ -19,7 +19,7 @@ func TestViewerServesHTML(t *testing.T) {
 	}
 
 	body := w.Body.String()
-	if !strings.Contains(body, "Picky Claude") {
-		t.Error("response body does not contain 'Picky Claude'")
+	if !strings.Contains(body, "ITKdev Claude Code") {
+		t.Error("response body does not contain 'ITKdev Claude Code'")
 	}
 }

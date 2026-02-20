@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/session"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/session"
 )
 
 func init() {
@@ -16,10 +16,10 @@ func init() {
 
 // sessionEndHook posts a session summary to the console server when Claude Code exits.
 func sessionEndHook(input *Input) error {
-	// Read PICKY_PORT from env
+	// Read ICC_PORT from env
 	portStr := os.Getenv(config.EnvPrefix + "_PORT")
 	if portStr == "" {
-		// Not running in a managed picky session - exit silently
+		// Not running in a managed icc session - exit silently
 		ExitOK()
 		return nil // unreachable
 	}

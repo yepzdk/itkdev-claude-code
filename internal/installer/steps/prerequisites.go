@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 // Prerequisites checks that required tools are installed and the OS is supported.

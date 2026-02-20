@@ -3,7 +3,7 @@ package search
 import (
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 func seedObservations(t *testing.T, database *db.DB) []int64 {

@@ -55,8 +55,8 @@ func TestNotificationMessage(t *testing.T) {
 
 func TestEventStringsUnknown(t *testing.T) {
 	title, body := eventStrings("unknown-event", "msg")
-	if title != "Picky Claude" {
-		t.Errorf("title = %q, want %q", title, "Picky Claude")
+	if title != "ITKdev Claude Code" {
+		t.Errorf("title = %q, want %q", title, "ITKdev Claude Code")
 	}
 	if body != "msg" {
 		t.Errorf("body = %q, want %q", body, "msg")

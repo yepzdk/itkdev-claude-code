@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 // RetentionConfig controls the retention scheduler behavior.

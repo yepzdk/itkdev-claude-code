@@ -1,15 +1,15 @@
-# CLAUDE.md — Developer Guide for Picky Claude
+# CLAUDE.md — Developer Guide for ITKdev Claude Code
 
 This file is for Claude Code (or any AI assistant) working on this codebase. It describes the project structure, how to build and test, and how to extend the system.
 
 ## Project Overview
 
-Picky Claude compiles to a single binary (`picky`) that wraps Claude Code with quality hooks, persistent memory, context management, and spec-driven development support.
+ITKdev Claude Code compiles to a single binary (`icc`) that wraps Claude Code with quality hooks, persistent memory, context management, and spec-driven development support.
 
 ## Build and Test
 
 ```bash
-make build        # Build bin/picky for current platform
+make build        # Build bin/icc for current platform
 make test         # Run all tests (go test ./...)
 make lint         # Run golangci-lint
 make release      # Cross-compile for macOS + Linux (arm64/amd64)
@@ -21,26 +21,26 @@ Version is injected at build time via `-ldflags`. The `dev` version is used for 
 ## Project Structure
 
 ```
-cmd/picky/main.go              # Entry point — calls cli.Execute()
+cmd/icc/main.go                # Entry point — calls cli.Execute()
 internal/
   cli/                         # All CLI commands (cobra)
     root.go                    # Root command, --json global flag
-    run.go                     # picky run — launches Claude Code
-    serve.go                   # picky serve — standalone console server
-    hook.go                    # picky hook <name> — dispatcher entry
-    install.go                 # picky install — multi-step installer
-    worktree.go                # picky worktree subcommands
-    session.go                 # picky session list
-    context.go                 # picky check-context
-    sendclear.go               # picky send-clear
-    registerplan.go            # picky register-plan
-    greet.go                   # picky greet
-    statusline.go              # picky statusline
+    run.go                     # icc run — launches Claude Code
+    serve.go                   # icc serve — standalone console server
+    hook.go                    # icc hook <name> — dispatcher entry
+    install.go                 # icc install — multi-step installer
+    worktree.go                # icc worktree subcommands
+    session.go                 # icc session list
+    context.go                 # icc check-context
+    sendclear.go               # icc send-clear
+    registerplan.go            # icc register-plan
+    greet.go                   # icc greet
+    statusline.go              # icc statusline
   config/
     branding.go                # ★ Product name, env prefix, config dir name
     constants.go               # Version, default port, default log level
     config.go                  # Runtime config from env vars
-    paths.go                   # Derived paths (~/.picky/db/, sessions/, logs/)
+    paths.go                   # Derived paths (~/.icc/db/, sessions/, logs/)
   hooks/
     dispatcher.go              # Hook registry and dispatch (name → handler)
     protocol.go                # Hook input/output JSON protocol (stdin/stdout)
@@ -131,10 +131,10 @@ docs/
 All product name references derive from `internal/config/branding.go`:
 
 ```go
-BinaryName    = "picky"         // CLI name
-DisplayName   = "Picky Claude"  // Human-readable
-EnvPrefix     = "PICKY"         // Env var prefix (PICKY_PORT, etc.)
-ConfigDirName = ".picky"        // ~/.picky/
+BinaryName    = "icc"                  // CLI name
+DisplayName   = "ITKdev Claude Code"   // Human-readable
+EnvPrefix     = "ICC"                  // Env var prefix (ICC_PORT, etc.)
+ConfigDirName = ".icc"                 // ~/.icc/
 ```
 
 To rename, change these four constants, update `go.mod` module path, and `BINARY_NAME` in the Makefile.
@@ -146,7 +146,7 @@ Hooks self-register via `init()` functions. The dispatcher in `hooks/dispatcher.
 1. Create `internal/hooks/my_hook.go`
 2. Implement the `Hook` function signature: `func(input *Input) error`
 3. Call `Register("my-hook", myHookFunc)` in an `init()` function
-4. The hook is now callable via `picky hook my-hook`
+4. The hook is now callable via `icc hook my-hook`
 
 Hooks read JSON from stdin (`ReadInput()`) and write results via `WriteOutput()`, `BlockWithError()`, or `ExitOK()` — all defined in `protocol.go`.
 
@@ -189,7 +189,7 @@ SQLite via `modernc.org/sqlite` (pure Go, no CGO). Schema migrations are in `db/
 
 ### Embedded Assets
 
-Static files in `assets/` are embedded via `embed.FS` in `internal/assets/embed.go`. The `Extract()` function writes them to disk during `picky install`. The web viewer is served directly from the embedded FS.
+Static files in `assets/` are embedded via `embed.FS` in `internal/assets/embed.go`. The `Extract()` function writes them to disk during `icc install`. The web viewer is served directly from the embedded FS.
 
 ## Testing
 

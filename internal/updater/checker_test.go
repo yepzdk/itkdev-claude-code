@@ -37,8 +37,8 @@ func TestCheckLatestRelease(t *testing.T) {
 	release := githubRelease{
 		TagName: "v1.2.3",
 		Assets: []releaseAsset{
-			{Name: "picky-darwin-arm64", BrowserDownloadURL: "https://example.com/picky-darwin-arm64"},
-			{Name: "picky-linux-amd64", BrowserDownloadURL: "https://example.com/picky-linux-amd64"},
+			{Name: "icc-darwin-arm64", BrowserDownloadURL: "https://example.com/icc-darwin-arm64"},
+			{Name: "icc-linux-amd64", BrowserDownloadURL: "https://example.com/icc-linux-amd64"},
 		},
 	}
 
@@ -75,22 +75,22 @@ func TestAssetURL(t *testing.T) {
 	info := &ReleaseInfo{
 		Version: "v1.0.0",
 		Assets: []Asset{
-			{Name: "picky-darwin-arm64", URL: "https://example.com/a"},
-			{Name: "picky-linux-amd64", URL: "https://example.com/b"},
+			{Name: "icc-darwin-arm64", URL: "https://example.com/a"},
+			{Name: "icc-linux-amd64", URL: "https://example.com/b"},
 		},
 	}
 
-	url := info.AssetURL("darwin", "arm64", "picky")
+	url := info.AssetURL("darwin", "arm64", "icc")
 	if url != "https://example.com/a" {
 		t.Errorf("AssetURL(darwin, arm64) = %q, want https://example.com/a", url)
 	}
 
-	url = info.AssetURL("linux", "amd64", "picky")
+	url = info.AssetURL("linux", "amd64", "icc")
 	if url != "https://example.com/b" {
 		t.Errorf("AssetURL(linux, amd64) = %q, want https://example.com/b", url)
 	}
 
-	url = info.AssetURL("windows", "amd64", "picky")
+	url = info.AssetURL("windows", "amd64", "icc")
 	if url != "" {
 		t.Errorf("AssetURL(windows, amd64) = %q, want empty", url)
 	}

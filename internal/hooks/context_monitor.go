@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/jesperpedersen/picky-claude/internal/session"
+	"github.com/itk-dev/itkdev-claude-code/internal/session"
 )
 
 func init() {
@@ -112,7 +112,7 @@ func thresholdMessage(threshold int, pct float64, sessionDir string) string {
 		return fmt.Sprintf(
 			"CRITICAL: Context at %.0f%%. IMMEDIATE handoff required.\n"+
 				"Step 1: Write continuation summary to %s\n"+
-				"Step 2: Execute: picky send-clear\n"+
+				"Step 2: Execute: icc send-clear\n"+
 				"Do both in THIS turn. Do NOT start new work.",
 			pct, contFile)
 	case threshold >= 90:
@@ -120,7 +120,7 @@ func thresholdMessage(threshold int, pct float64, sessionDir string) string {
 			"Context at %.0f%%. Mandatory handoff.\n"+
 				"Step 1: Finish current tool call only\n"+
 				"Step 2: Write continuation summary to %s\n"+
-				"Step 3: Execute: picky send-clear\n"+
+				"Step 3: Execute: icc send-clear\n"+
 				"Do NOT start new fix cycles.",
 			pct, contFile)
 	case threshold >= 80:

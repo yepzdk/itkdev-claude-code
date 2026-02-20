@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 // VectorResult holds a search result with its similarity score.

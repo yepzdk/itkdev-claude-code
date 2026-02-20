@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 )
 
 // SelfUpdate checks for a new version and replaces the current binary.

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jesperpedersen/picky-claude/internal/hooks/checkers"
+	"github.com/itk-dev/itkdev-claude-code/internal/hooks/checkers"
 )
 
 func init() {

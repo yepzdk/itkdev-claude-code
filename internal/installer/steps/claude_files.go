@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jesperpedersen/picky-claude/internal/assets"
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/assets"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 // ClaudeFiles extracts embedded rules, commands, agents, and skills to the

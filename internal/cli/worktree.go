@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jesperpedersen/picky-claude/internal/worktree"
+	"github.com/itk-dev/itkdev-claude-code/internal/worktree"
 	"github.com/spf13/cobra"
 )
 

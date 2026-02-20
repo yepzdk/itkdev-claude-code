@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jesperpedersen/picky-claude/internal/notify"
+	"github.com/itk-dev/itkdev-claude-code/internal/notify"
 )
 
 func init() {

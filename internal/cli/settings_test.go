@@ -11,7 +11,7 @@ func TestInstallGlobalSettings_NewFile(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")
 
-	if err := installGlobalSettings(path, "/usr/local/bin/picky", 41777); err != nil {
+	if err := installGlobalSettings(path, "/usr/local/bin/icc", 41777); err != nil {
 		t.Fatalf("installGlobalSettings failed: %v", err)
 	}
 
@@ -20,7 +20,7 @@ func TestInstallGlobalSettings_NewFile(t *testing.T) {
 	// Check permissions were added
 	perms := getPermissionsAllow(t, settings)
 	wantPerms := []string{
-		"Bash(picky *)",
+		"Bash(icc *)",
 		"Skill(spec)",
 		"Skill(spec-plan)",
 		"Skill(spec-implement)",
@@ -62,7 +62,7 @@ func TestInstallGlobalSettings_PreservesExisting(t *testing.T) {
 	}
 	writeSettingsFile(t, path, existing)
 
-	if err := installGlobalSettings(path, "/usr/local/bin/picky", 41777); err != nil {
+	if err := installGlobalSettings(path, "/usr/local/bin/icc", 41777); err != nil {
 		t.Fatalf("installGlobalSettings failed: %v", err)
 	}
 
@@ -79,7 +79,7 @@ func TestInstallGlobalSettings_PreservesExisting(t *testing.T) {
 		t.Error("existing permission Bash(my-tool *) should be preserved")
 	}
 
-	// Picky permissions added
+	// ICC permissions added
 	if !containsString(perms, "Skill(spec)") {
 		t.Error("Skill(spec) should be added")
 	}
@@ -89,8 +89,8 @@ func TestInstallGlobalSettings_Idempotent(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")
 
-	installGlobalSettings(path, "/usr/local/bin/picky", 41777)
-	installGlobalSettings(path, "/usr/local/bin/picky", 41777)
+	installGlobalSettings(path, "/usr/local/bin/icc", 41777)
+	installGlobalSettings(path, "/usr/local/bin/icc", 41777)
 
 	settings := readSettingsFile(t, path)
 	perms := getPermissionsAllow(t, settings)
@@ -112,7 +112,7 @@ func TestUninstallGlobalSettings(t *testing.T) {
 	path := filepath.Join(dir, "settings.json")
 
 	// Install first
-	installGlobalSettings(path, "/usr/local/bin/picky", 41777)
+	installGlobalSettings(path, "/usr/local/bin/icc", 41777)
 
 	// Then uninstall
 	if err := uninstallGlobalSettings(path); err != nil {
@@ -124,8 +124,8 @@ func TestUninstallGlobalSettings(t *testing.T) {
 	// Permissions should be empty
 	perms := getPermissionsAllow(t, settings)
 	for _, p := range perms {
-		if p == "Skill(spec)" || p == "Bash(picky *)" {
-			t.Errorf("picky permission %q should be removed", p)
+		if p == "Skill(spec)" || p == "Bash(icc *)" {
+			t.Errorf("icc permission %q should be removed", p)
 		}
 	}
 
@@ -144,19 +144,19 @@ func TestUninstallGlobalSettings_PreservesOtherEntries(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "settings.json")
 
-	// Create settings with both picky and user entries
+	// Create settings with both icc and user entries
 	existing := map[string]any{
 		"customSetting": true,
 		"permissions": map[string]any{
 			"allow": []any{
 				"Bash(my-tool *)",
-				"Bash(picky *)",
+				"Bash(icc *)",
 				"Skill(spec)",
 			},
 		},
 		"statusLine": map[string]any{
 			"type":    "command",
-			"command": "/usr/local/bin/picky statusline",
+			"command": "/usr/local/bin/icc statusline",
 		},
 		"companyAnnouncements": []any{
 			"Console: http://localhost:41777 | /spec — plan, build & verify",

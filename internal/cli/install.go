@@ -3,8 +3,8 @@ package cli
 import (
 	"os"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
-	"github.com/jesperpedersen/picky-claude/internal/installer/steps"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer/steps"
 	"github.com/spf13/cobra"
 )
 

@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"github.com/jesperpedersen/picky-claude/internal/hooks"
+	"github.com/itk-dev/itkdev-claude-code/internal/hooks"
 	"github.com/spf13/cobra"
 
 	// Register all hook implementations.
-	_ "github.com/jesperpedersen/picky-claude/internal/hooks/checkers"
+	_ "github.com/itk-dev/itkdev-claude-code/internal/hooks/checkers"
 )
 
 var hookCmd = &cobra.Command{

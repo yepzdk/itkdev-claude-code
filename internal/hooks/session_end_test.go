@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/session"
+	"github.com/itk-dev/itkdev-claude-code/internal/session"
 )
 
 func TestSessionEndHookRegistered(t *testing.T) {

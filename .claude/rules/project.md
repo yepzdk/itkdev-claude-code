@@ -1,10 +1,10 @@
-# Project: Picky Claude
+# Project: ITKdev Claude Code
 
 **Last Updated:** 2026-02-16
 
 ## Overview
 
-A free, open-source quality layer for Claude Code. Compiles to a single Go binary (`picky`) with quality hooks, persistent memory, context management, and spec-driven development support.
+A free, open-source quality layer for Claude Code. Compiles to a single Go binary (`icc`) with quality hooks, persistent memory, context management, and spec-driven development support.
 
 ## Technology Stack
 
@@ -19,7 +19,7 @@ A free, open-source quality layer for Claude Code. Compiles to a single Go binar
 ## Directory Structure
 
 ```
-cmd/picky/main.go              # Entry point
+cmd/icc/main.go                # Entry point
 internal/
   cli/                         # CLI commands (cobra)
   config/                      # Configuration and branding
@@ -41,7 +41,7 @@ docs/                          # Documentation
 ## Key Files
 
 - **Configuration:** `internal/config/branding.go` (product name, env prefix)
-- **Entry Point:** `cmd/picky/main.go`
+- **Entry Point:** `cmd/icc/main.go`
 - **Tests:** `*_test.go` files alongside source
 
 ## Development Commands
@@ -82,7 +82,7 @@ go test -cover ./...       # With coverage
 
 - Single binary with embedded assets (via `embed.FS`)
 - Hooks are subcommands of the same binary
-- Console server runs as a goroutine within `picky run`
+- Console server runs as a goroutine within `icc run`
 - Pure Go SQLite - no CGO required
 - Cross-platform: macOS + Linux (arm64 + amd64)
 
@@ -99,11 +99,11 @@ writeJSON(w, http.StatusCreated, map[string]int64{"id": id})
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PICKY_HOME` | `~/.picky` | Data directory |
-| `PICKY_PORT` | `41777` | Console server port |
-| `PICKY_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
-| `PICKY_SESSION_ID` | auto | Session identifier |
-| `PICKY_NO_UPDATE` | — | Disable auto-update check |
+| `ICC_HOME` | `~/.icc` | Data directory |
+| `ICC_PORT` | `41777` | Console server port |
+| `ICC_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
+| `ICC_SESSION_ID` | auto | Session identifier |
+| `ICC_NO_UPDATE` | — | Disable auto-update check |
 
 ## Extending the System
 

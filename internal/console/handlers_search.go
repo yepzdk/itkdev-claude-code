@@ -3,7 +3,7 @@ package console
 import (
 	"net/http"
 
-	"github.com/jesperpedersen/picky-claude/internal/search"
+	"github.com/itk-dev/itkdev-claude-code/internal/search"
 )
 
 func (s *Server) handleHybridSearch(w http.ResponseWriter, r *http.Request) {

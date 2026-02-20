@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/worktree"
+	"github.com/itk-dev/itkdev-claude-code/internal/worktree"
 )
 
 // initGitRepo creates a temp directory with a git repo containing one commit.

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 func TestConfigFiles_Name(t *testing.T) {
@@ -101,7 +101,7 @@ func TestConfigFiles_DoesNotOverwrite(t *testing.T) {
 }
 
 func TestHooksConfigIncludesSessionStart(t *testing.T) {
-	hooks := hooksConfig("/test/bin/picky")
+	hooks := hooksConfig("/test/bin/icc")
 
 	sessionStart, ok := hooks["SessionStart"]
 	if !ok {
@@ -119,7 +119,7 @@ func TestHooksConfigIncludesSessionStart(t *testing.T) {
 	if !ok || len(hookList) != 1 {
 		t.Fatal("SessionStart first entry should have one hook command")
 	}
-	if hookList[0]["command"] != "/test/bin/picky hook session-start" {
+	if hookList[0]["command"] != "/test/bin/icc hook session-start" {
 		t.Errorf("expected session-start command, got %v", hookList[0]["command"])
 	}
 
@@ -128,7 +128,7 @@ func TestHooksConfigIncludesSessionStart(t *testing.T) {
 	if !ok || len(hookList) != 1 {
 		t.Fatal("SessionStart second entry should have one hook command")
 	}
-	if hookList[0]["command"] != "/test/bin/picky hook branch-guard" {
+	if hookList[0]["command"] != "/test/bin/icc hook branch-guard" {
 		t.Errorf("expected branch-guard command, got %v", hookList[0]["command"])
 	}
 }

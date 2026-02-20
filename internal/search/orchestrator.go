@@ -3,7 +3,7 @@ package search
 import (
 	"sort"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 // Weights controls the blend between FTS5 and vector search scores.

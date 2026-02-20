@@ -1,10 +1,10 @@
-# Picky Claude
+# ITKdev Claude Code
 
 A free, open-source quality layer for Claude Code. Single binary, zero runtime dependencies — quality-enforced, context-managed, spec-driven development.
 
 ## What It Does
 
-Picky Claude wraps Claude Code with:
+ITKdev Claude Code wraps Claude Code with:
 
 - **Quality hooks** — automatic linting, formatting, and TDD enforcement on every file write
 - **Context management** — monitors context usage and seamlessly continues sessions when limits are reached (Endless Mode)
@@ -13,9 +13,9 @@ Picky Claude wraps Claude Code with:
 - **Git worktree isolation** — develop in isolated worktrees, squash-merge when done
 - **Web viewer** — real-time observation stream at `http://localhost:41777`
 
-### Why Picky Claude?
+### Why ITKdev Claude Code?
 
-Picky Claude compiles to a **single Go binary** with all assets embedded. No interpreters, no `npm install`, no virtual environments. Hooks are compiled Go code — sub-5ms execution.
+ITKdev Claude Code compiles to a **single Go binary** with all assets embedded. No interpreters, no `npm install`, no virtual environments. Hooks are compiled Go code — sub-5ms execution.
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ Picky Claude compiles to a **single Go binary** with all assets embedded. No int
 ### Homebrew (macOS/Linux)
 
 ```bash
-brew install yepzdk/tools/picky-claude
+brew install yepzdk/tools/itkdev-claude-code
 ```
 
 ### Project Setup
@@ -35,7 +35,7 @@ brew install yepzdk/tools/picky-claude
 In any project directory, run the installer:
 
 ```bash
-picky install
+icc install
 ```
 
 This sets up:
@@ -51,16 +51,16 @@ Use `--skip-prereqs` or `--skip-deps` to skip specific steps.
 ```bash
 # 1. Install into your project
 cd your-project
-picky install
+icc install
 
 # 2. Launch Claude Code with hooks and Endless Mode
-picky run
+icc run
 
 # 3. Or start the console server standalone (for debugging)
-picky serve
+icc serve
 ```
 
-When launched via `picky run`, Claude Code gets:
+When launched via `icc run`, Claude Code gets:
 - All quality hooks active (file checking, TDD enforcement, context monitoring)
 - A console server running on port 41777 with persistent memory
 - Automatic session management and Endless Mode continuation
@@ -69,19 +69,19 @@ When launched via `picky run`, Claude Code gets:
 
 | Command | Description |
 |---------|-------------|
-| `picky run` | Launch Claude Code with hooks and Endless Mode |
-| `picky install` | Set up project with rules, hooks, and configuration |
-| `picky serve` | Start the console server standalone |
-| `picky hook <name>` | Run a specific hook (called by Claude Code, not directly) |
-| `picky greet` | Print the welcome banner |
-| `picky check-context` | Get current context usage percentage |
-| `picky send-clear [plan]` | Trigger Endless Mode session restart |
-| `picky register-plan <path> <status>` | Associate a plan file with the current session |
-| `picky session list` | List active sessions |
-| `picky statusline` | Format the status bar (reads JSON from stdin) |
-| `picky worktree <subcommand>` | Git worktree management (create, detect, diff, sync, cleanup, status) |
-| `picky settings install` | Add Picky Claude entries to global `~/.claude/settings.json` |
-| `picky settings uninstall` | Remove Picky Claude entries from global `~/.claude/settings.json` |
+| `icc run` | Launch Claude Code with hooks and Endless Mode |
+| `icc install` | Set up project with rules, hooks, and configuration |
+| `icc serve` | Start the console server standalone |
+| `icc hook <name>` | Run a specific hook (called by Claude Code, not directly) |
+| `icc greet` | Print the welcome banner |
+| `icc check-context` | Get current context usage percentage |
+| `icc send-clear [plan]` | Trigger Endless Mode session restart |
+| `icc register-plan <path> <status>` | Associate a plan file with the current session |
+| `icc session list` | List active sessions |
+| `icc statusline` | Format the status bar (reads JSON from stdin) |
+| `icc worktree <subcommand>` | Git worktree management (create, detect, diff, sync, cleanup, status) |
+| `icc settings install` | Add ITKdev Claude Code entries to global `~/.claude/settings.json` |
+| `icc settings uninstall` | Remove ITKdev Claude Code entries from global `~/.claude/settings.json` |
 
 All commands support `--json` for structured output.
 
@@ -111,7 +111,7 @@ Hooks run as subcommands of the same binary, invoked automatically by Claude Cod
 ## Architecture
 
 ```
-picky run
+icc run
     |
     v
 +------------------+     HTTP      +-------------------+
@@ -122,7 +122,7 @@ picky run
          | hooks                   |  - SSE broadcast    |
          v                         |  - Web viewer       |
 +------------------+               +-------------------+
-|  picky hook *    |                       ^
+|  icc hook *      |                       ^
 |  (same binary)   |───────────────────────┘
 |  - file-checker  |     POST observations
 |  - tdd-enforcer  |     GET context
@@ -130,7 +130,7 @@ picky run
 +------------------+
 ```
 
-Everything runs in a single process. The console server is a goroutine within `picky run`. Hooks are compiled Go code invoked as subcommands of the same binary.
+Everything runs in a single process. The console server is a goroutine within `icc run`. Hooks are compiled Go code invoked as subcommands of the same binary.
 
 ## Configuration
 
@@ -138,11 +138,11 @@ Configuration is via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PICKY_HOME` | `~/.picky` | Data directory for database, sessions, logs |
-| `PICKY_PORT` | `41777` | Console server port |
-| `PICKY_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
-| `PICKY_SESSION_ID` | auto-generated | Session identifier |
-| `PICKY_NO_UPDATE` | — | Disable auto-update check |
+| `ICC_HOME` | `~/.icc` | Data directory for database, sessions, logs |
+| `ICC_PORT` | `41777` | Console server port |
+| `ICC_LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
+| `ICC_SESSION_ID` | auto-generated | Session identifier |
+| `ICC_NO_UPDATE` | — | Disable auto-update check |
 
 ## Development
 
@@ -151,21 +151,21 @@ Configuration is via environment variables:
 Requires Go 1.25+.
 
 ```bash
-git clone https://github.com/jesperpedersen/picky-claude.git
-cd picky-claude
+git clone https://github.com/itk-dev/itkdev-claude-code.git
+cd itkdev-claude-code
 make build
 ```
 
-The binary is at `bin/picky`. Add it to your PATH or copy it somewhere in your PATH:
+The binary is at `bin/icc`. Add it to your PATH or copy it somewhere in your PATH:
 
 ```bash
-cp bin/picky /usr/local/bin/
+cp bin/icc /usr/local/bin/
 ```
 
 ### Make Targets
 
 ```bash
-make build        # Build for current platform
+make build        # Build bin/icc for current platform
 make test         # Run all tests
 make lint         # Run golangci-lint
 make release      # Cross-compile for macOS + Linux (arm64/amd64)
@@ -174,7 +174,7 @@ make all          # Build web viewer then compile
 
 ### Cross-Platform
 
-Picky Claude uses pure Go SQLite (`modernc.org/sqlite`) — no CGO required. Release builds target:
+ITKdev Claude Code uses pure Go SQLite (`modernc.org/sqlite`) — no CGO required. Release builds target:
 
 - macOS arm64 (Apple Silicon)
 - macOS amd64 (Intel)

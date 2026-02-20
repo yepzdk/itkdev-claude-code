@@ -1,23 +1,22 @@
-# Picky Claude — Implementation Plan
+# ITKdev Claude Code — Implementation Plan
 
-> **Working title.** The name "picky-claude" / `picky` is a placeholder. All references
-> to the product name are concentrated in `internal/config/branding.go` so renaming
-> requires changing a single file (binary name, env prefix, config dirs, display name).
+> **Naming.** All references to the product name are concentrated in `internal/config/branding.go`
+> so renaming requires changing a single file (binary name, env prefix, config dirs, display name).
 > The Makefile `BINARY_NAME` variable controls build output.
 
 A free, open-source quality layer for Claude Code. Single Go binary providing quality-enforced, context-managed, spec-driven development. Licensed under MIT.
 
 ## 1. Architecture Overview
 
-### Architecture (picky-claude)
+### Architecture (itkdev-claude-code)
 
 | Component | Implementation | Purpose |
 |-----------|---------------|---------|
-| **CLI** | Single Go binary (`picky`) | All commands: run, session, worktree, install |
-| **Console Server** | Goroutine within `picky serve` | Memory, MCP, HTTP API, SSE — replaces the Bun console |
-| **Hooks** | Go subcommands (`picky hook <name>`) | All hooks as compiled code, no Python/Bun dependency |
+| **CLI** | Single Go binary (`icc`) | All commands: run, session, worktree, install |
+| **Console Server** | Goroutine within `icc serve` | Memory, MCP, HTTP API, SSE — replaces the Bun console |
+| **Hooks** | Go subcommands (`icc hook <name>`) | All hooks as compiled code, no Python/Bun dependency |
 | **Web Viewer** | Embedded static files (`embed.FS`) | React SPA served by the console HTTP server |
-| **Installer** | `picky install` subcommand | Self-contained setup |
+| **Installer** | `icc install` subcommand | Self-contained setup |
 
 **Key advantage:** Single binary distribution. No runtime dependencies beyond the tools it orchestrates (Claude Code, git, language-specific linters).
 
@@ -26,24 +25,24 @@ A free, open-source quality layer for Claude Code. Single Go binary providing qu
 ## 2. Module Structure
 
 ```
-picky-claude/                              # repo name (rename freely)
+itkdev-claude-code/                        # repo name
 ├── cmd/
-│   └── picky/                             # binary entry point (matches branding.go)
+│   └── icc/                               # binary entry point (matches branding.go)
 │       └── main.go
 ├── internal/
 │   ├── cli/                           # CLI command definitions
 │   │   ├── root.go                    # Root command, global flags
-│   │   ├── run.go                     # `picky run` — launch Claude Code with Endless Mode
-│   │   ├── install.go                 # `picky install` — multi-step installer
-│   │   ├── serve.go                   # `picky serve` — start console server
-│   │   ├── hook.go                    # `picky hook <name>` — run a specific hook
-│   │   ├── session.go                 # `picky session *` — session commands
-│   │   ├── worktree.go               # `picky worktree *` — git worktree management
-│   │   ├── context.go                # `picky check-context` — context usage check
-│   │   ├── sendclear.go              # `picky send-clear` — trigger Endless Mode restart
-│   │   ├── registerplan.go           # `picky register-plan` — plan-session association
-│   │   ├── greet.go                  # `picky greet` — welcome banner
-│   │   └── statusline.go            # `picky statusline` — status bar formatter
+│   │   ├── run.go                     # `icc run` — launch Claude Code with Endless Mode
+│   │   ├── install.go                 # `icc install` — multi-step installer
+│   │   ├── serve.go                   # `icc serve` — start console server
+│   │   ├── hook.go                    # `icc hook <name>` — run a specific hook
+│   │   ├── session.go                 # `icc session *` — session commands
+│   │   ├── worktree.go               # `icc worktree *` — git worktree management
+│   │   ├── context.go                # `icc check-context` — context usage check
+│   │   ├── sendclear.go              # `icc send-clear` — trigger Endless Mode restart
+│   │   ├── registerplan.go           # `icc register-plan` — plan-session association
+│   │   ├── greet.go                  # `icc greet` — welcome banner
+│   │   └── statusline.go            # `icc statusline` — status bar formatter
 │   │
 │   ├── hooks/                         # Hook implementations
 │   │   ├── dispatcher.go             # Route hook events to handlers
@@ -133,7 +132,7 @@ picky-claude/                              # repo name (rename freely)
 │   │
 │   └── config/                        # Configuration
 │       ├── branding.go              # ★ SINGLE SOURCE for product name, env prefix, paths
-│       ├── paths.go                  # Standard paths (~/.picky/, .claude/, etc.)
+│       ├── paths.go                  # Standard paths (~/.icc/, .claude/, etc.)
 │       ├── config.go                # Config file loading
 │       └── constants.go             # Version, defaults
 │
@@ -167,23 +166,23 @@ picky-claude/                              # repo name (rename freely)
 
 | Command | Notes |
 |---------|-------|
-| `picky run` | Launch Claude Code with hooks + Endless Mode |
-| `picky check-context --json` | Read context percentage from cache |
-| `picky send-clear <plan>` | Trigger Endless Mode restart |
-| `picky send-clear --general` | Restart without plan context |
-| `picky register-plan <path> <status>` | Associate plan with session |
-| `picky greet` | Welcome banner |
-| `picky statusline` | Read JSON from stdin, format status bar |
-| `picky worktree *` | All worktree subcommands (create, detect, diff, sync, cleanup, status) |
-| `picky session list` | List active sessions |
-| `picky install` | Self-contained installer |
-| `picky serve` | Start console server standalone |
+| `icc run` | Launch Claude Code with hooks + Endless Mode |
+| `icc check-context --json` | Read context percentage from cache |
+| `icc send-clear <plan>` | Trigger Endless Mode restart |
+| `icc send-clear --general` | Restart without plan context |
+| `icc register-plan <path> <status>` | Associate plan with session |
+| `icc greet` | Welcome banner |
+| `icc statusline` | Read JSON from stdin, format status bar |
+| `icc worktree *` | All worktree subcommands (create, detect, diff, sync, cleanup, status) |
+| `icc session list` | List active sessions |
+| `icc install` | Self-contained installer |
+| `icc serve` | Start console server standalone |
 
 All commands support `--json` for structured output.
 
 ### 3.2 Hooks System
 
-Claude Code hooks are configured in `.claude/hooks.json` (or `settings.json`). Each hook calls back into the `picky` binary:
+Claude Code hooks are configured in `.claude/hooks.json` (or `settings.json`). Each hook calls back into the `icc` binary:
 
 ```json
 {
@@ -191,19 +190,19 @@ Claude Code hooks are configured in `.claude/hooks.json` (or `settings.json`). E
     "PostToolUse": [
       {
         "matcher": "Write|Edit|MultiEdit",
-        "command": "picky hook file-checker",
+        "command": "icc hook file-checker",
         "blocking": true,
         "timeout": 15000
       },
       {
         "matcher": "Write|Edit|MultiEdit",
-        "command": "picky hook tdd-enforcer",
+        "command": "icc hook tdd-enforcer",
         "blocking": false,
         "timeout": 15000
       },
       {
         "matcher": "Read|Write|Edit|MultiEdit|Bash|Task|Skill|Grep|Glob",
-        "command": "picky hook context-monitor",
+        "command": "icc hook context-monitor",
         "blocking": false,
         "timeout": 15000
       }
@@ -211,28 +210,28 @@ Claude Code hooks are configured in `.claude/hooks.json` (or `settings.json`). E
     "PreToolUse": [
       {
         "matcher": "Bash|WebSearch|WebFetch|Grep|Task|EnterPlanMode|ExitPlanMode",
-        "command": "picky hook tool-redirect",
+        "command": "icc hook tool-redirect",
         "blocking": true,
         "timeout": 15000
       }
     ],
     "SessionStart": [
       {
-        "command": "picky hook session-start",
+        "command": "icc hook session-start",
         "blocking": true,
         "timeout": 15000
       }
     ],
     "Stop": [
       {
-        "command": "picky hook spec-stop-guard",
+        "command": "icc hook spec-stop-guard",
         "blocking": true,
         "timeout": 15000
       }
     ],
     "SessionEnd": [
       {
-        "command": "picky hook session-end",
+        "command": "icc hook session-end",
         "blocking": true,
         "timeout": 15000
       }
@@ -320,13 +319,13 @@ Three-layer search:
 
 ```
 Session Lifecycle:
-1. `picky run` starts
-2. Assigns PICKY_SESSION_ID (PID-based or UUID)
+1. `icc run` starts
+2. Assigns ICC_SESSION_ID (PID-based or UUID)
 3. Launches Claude Code with environment + hooks
 4. Hooks report to console server via HTTP
 5. Context monitor watches usage
-6. At 90%: writes continuation.md → calls `picky send-clear`
-7. `picky send-clear`:
+6. At 90%: writes continuation.md → calls `icc send-clear`
+7. `icc send-clear`:
    a. Waits for memory capture (10s)
    b. Sends /clear to Claude Code
    c. Sends continuation prompt
@@ -354,7 +353,7 @@ Worktrees are created at `.worktrees/spec-<slug>-<hash>/` with branch `spec/<slu
 
 ### 3.9 Rules, Commands, Agents
 
-These are markdown files embedded into the binary and extracted during `picky install`:
+These are markdown files embedded into the binary and extracted during `icc install`:
 
 | Type | Location | Count (approx) |
 |------|----------|-----------------|
@@ -367,13 +366,13 @@ These are markdown files embedded into the binary and extracted during `picky in
 
 ### 3.10 Installer
 
-`picky install` runs a multi-step setup:
+`icc install` runs a multi-step setup:
 
 | Step | Actions |
 |------|---------|
 | 1. Prerequisites | Verify git, Claude Code installed. Check OS/arch support |
 | 2. Dependencies | Install vexor, playwright-cli, mcp-cli (via npm/brew) |
-| 3. Shell config | Add `picky` alias/PATH to .zshrc/.bashrc |
+| 3. Shell config | Add `icc` alias/PATH to .zshrc/.bashrc |
 | 4. Claude files | Create .claude/ directory with rules, commands, agents, hooks |
 | 5. Config files | Write settings.json, .lsp.json, .mcp.json, hooks.json |
 | 6. VS Code | Recommend extensions |
@@ -426,7 +425,7 @@ Reads JSON from stdin (piped from Claude Code), formats a status bar with widget
 ### 5.1 Normal Session Flow
 
 ```
-User runs `picky run`
+User runs `icc run`
         │
         ▼
 ┌─────────────────┐     HTTP      ┌──────────────────┐
@@ -437,7 +436,7 @@ User runs `picky run`
         │ hooks                   │  - SSE broadcast   │
         ▼                         │  - Web viewer      │
 ┌─────────────────┐               └──────────────────┘
-│  picky hook *   │                       ▲
+│  icc hook *     │                       ▲
 │  (same binary)  │───────────────────────┘
 │  - file-checker │     POST observations
 │  - tdd-enforcer │     GET context
@@ -455,13 +454,13 @@ context-monitor hook fires
       │
       ▼
 Returns instruction to Claude:
-"Write continuation.md, then call picky send-clear"
+"Write continuation.md, then call icc send-clear"
       │
       ▼
 Claude writes continuation.md
       │
       ▼
-Claude calls: picky send-clear <plan.md>
+Claude calls: icc send-clear <plan.md>
       │
       ├─ Wait 10s for memory capture
       ├─ Send /clear to Claude Code stdin
@@ -493,7 +492,7 @@ Continues where it left off
 - Basic console HTTP server skeleton
 
 ### Phase 2: Core Hooks
-- Hook dispatcher (`picky hook <name>` routing)
+- Hook dispatcher (`icc hook <name>` routing)
 - file-checker with Python, TypeScript, Go checkers
 - tdd-enforcer
 - context-monitor (read context cache, threshold logic)
@@ -508,11 +507,11 @@ Continues where it left off
 - MCP server with memory tools
 
 ### Phase 4: Session Management
-- `picky run` — launch Claude Code with env + hooks
+- `icc run` — launch Claude Code with env + hooks
 - Session ID management
-- `picky send-clear` — Endless Mode restart
-- `picky check-context` — context percentage
-- `picky register-plan` — plan association
+- `icc send-clear` — Endless Mode restart
+- `icc check-context` — context percentage
+- `icc register-plan` — plan association
 - Continuation file protocol
 
 ### Phase 5: Worktree & Git
@@ -551,16 +550,16 @@ Continues where it left off
 ## 7. Key Design Decisions
 
 ### 7.1 Single Binary
-Everything compiles to one binary. Rules, commands, agents, and web viewer assets are embedded via `embed.FS`. The `picky install` command extracts these to `.claude/` in the project directory.
+Everything compiles to one binary. Rules, commands, agents, and web viewer assets are embedded via `embed.FS`. The `icc install` command extracts these to `.claude/` in the project directory.
 
 ### 7.2 No CGO
 Using `modernc.org/sqlite` (pure Go) instead of `mattn/go-sqlite3` (CGO). This enables easy cross-compilation for macOS (arm64/amd64), Linux (arm64/amd64), and Windows.
 
 ### 7.3 Console as Goroutine
-The console server runs as a goroutine when `picky run` is called, not as a separate process. This simplifies lifecycle management. Alternatively, `picky serve` can run it standalone for debugging.
+The console server runs as a goroutine when `icc run` is called, not as a separate process. This simplifies lifecycle management. Alternatively, `icc serve` can run it standalone for debugging.
 
 ### 7.4 Hooks as Subcommands
-Hooks are Go subcommands (`picky hook file-checker`). Claude Code's hooks.json calls back into the same binary. Sub-5ms hook execution.
+Hooks are Go subcommands (`icc hook file-checker`). Claude Code's hooks.json calls back into the same binary. Sub-5ms hook execution.
 
 ### 7.5 MCP Server
 The MCP server runs within the console goroutine, exposing memory tools (search, timeline, get_observations, save_memory) over stdio or HTTP transport as needed by Claude Code's MCP config.
@@ -577,19 +576,19 @@ package config
 
 const (
     // ★ Change these to rename the entire product
-    BinaryName  = "picky"          // CLI executable name
-    DisplayName = "Picky Claude"   // Human-readable name (banner, docs)
-    EnvPrefix   = "PICKY"          // Environment variable prefix (PICKY_HOME, etc.)
-    ConfigDir   = ".picky"         // ~/.picky/
+    BinaryName  = "icc"                  // CLI executable name
+    DisplayName = "ITKdev Claude Code"   // Human-readable name (banner, docs)
+    EnvPrefix   = "ICC"                  // Environment variable prefix (ICC_HOME, etc.)
+    ConfigDir   = ".icc"                 // ~/.icc/
 )
 ```
 
 Everything else derives from these constants:
-- `paths.go` builds `~/.picky/sessions/`, `~/.picky/db/` etc. from `ConfigDir`
-- `hooks.json` template uses `BinaryName` for hook commands (`picky hook file-checker`)
+- `paths.go` builds `~/.icc/sessions/`, `~/.icc/db/` etc. from `ConfigDir`
+- `hooks.json` template uses `BinaryName` for hook commands (`icc hook file-checker`)
 - `statusline` uses `DisplayName` in the banner
 - Env vars use `EnvPrefix + "_SESSION_ID"`, etc.
-- `Makefile` reads `BINARY_NAME ?= picky` and passes it via `-ldflags`
+- `Makefile` reads `BINARY_NAME ?= icc` and passes it via `-ldflags`
 
 To rename: change the four constants, update `go.mod` module path, and `BINARY_NAME` in the Makefile. Everything else propagates automatically.
 
@@ -603,15 +602,15 @@ All features are available unconditionally.
 
 ## 8. Environment Variables
 
-The `PICKY_` prefix is derived from `branding.go` and changes automatically with a rename.
+The `ICC_` prefix is derived from `branding.go` and changes automatically with a rename.
 
 | Variable | Purpose |
 |----------|---------|
-| `PICKY_SESSION_ID` | Current session identifier |
-| `PICKY_HOME` | Override default config dir (~/.picky) |
-| `PICKY_PORT` | Console server port (default: 41777) |
-| `PICKY_LOG_LEVEL` | Logging level (debug, info, warn, error) |
-| `PICKY_NO_UPDATE` | Disable auto-update check |
+| `ICC_SESSION_ID` | Current session identifier |
+| `ICC_HOME` | Override default config dir (~/.icc) |
+| `ICC_PORT` | Console server port (default: 41777) |
+| `ICC_LOG_LEVEL` | Logging level (debug, info, warn, error) |
+| `ICC_NO_UPDATE` | Disable auto-update check |
 | `CLAUDE_CODE_TASK_LIST_ID` | Task list isolation per session |
 
 ---
@@ -623,7 +622,7 @@ The `PICKY_` prefix is derived from `branding.go` and changes automatically with
 | Unit tests | Table-driven tests for all business logic |
 | Hook tests | Test each hook's stdin→stdout behavior with mock tool events |
 | Database tests | In-memory SQLite for fast CRUD tests |
-| Integration tests | Launch `picky run` with a mock Claude Code, verify hook flows |
+| Integration tests | Launch `icc run` with a mock Claude Code, verify hook flows |
 | E2E tests | Script that runs a full session and checks continuation works |
 
 ---
@@ -631,18 +630,18 @@ The `PICKY_` prefix is derived from `branding.go` and changes automatically with
 ## 10. Build & Distribution
 
 ```makefile
-BINARY_NAME ?= picky
+BINARY_NAME ?= icc
 
 # Build for current platform
 build:
-	go build -o bin/$(BINARY_NAME) ./cmd/picky
+	go build -o bin/$(BINARY_NAME) ./cmd/icc
 
 # Build for all platforms
 release:
-	GOOS=darwin GOARCH=arm64 go build -o bin/$(BINARY_NAME)-darwin-arm64 ./cmd/picky
-	GOOS=darwin GOARCH=amd64 go build -o bin/$(BINARY_NAME)-darwin-amd64 ./cmd/picky
-	GOOS=linux GOARCH=arm64 go build -o bin/$(BINARY_NAME)-linux-arm64 ./cmd/picky
-	GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_NAME)-linux-amd64 ./cmd/picky
+	GOOS=darwin GOARCH=arm64 go build -o bin/$(BINARY_NAME)-darwin-arm64 ./cmd/icc
+	GOOS=darwin GOARCH=amd64 go build -o bin/$(BINARY_NAME)-darwin-amd64 ./cmd/icc
+	GOOS=linux GOARCH=arm64 go build -o bin/$(BINARY_NAME)-linux-arm64 ./cmd/icc
+	GOOS=linux GOARCH=amd64 go build -o bin/$(BINARY_NAME)-linux-amd64 ./cmd/icc
 
 # Build web viewer then embed
 viewer:

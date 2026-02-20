@@ -14,10 +14,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jesperpedersen/picky-claude/internal/assets"
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/db"
-	"github.com/jesperpedersen/picky-claude/internal/search"
+	"github.com/itk-dev/itkdev-claude-code/internal/assets"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/search"
 	"github.com/mark3labs/mcp-go/server"
 )
 

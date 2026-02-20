@@ -1,4 +1,4 @@
-module github.com/jesperpedersen/picky-claude
+module github.com/itk-dev/itkdev-claude-code
 
 go 1.25.0
 

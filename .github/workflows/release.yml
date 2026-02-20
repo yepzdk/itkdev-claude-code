@@ -102,10 +102,10 @@ jobs:
         with:
           tag_name: ${{ steps.bump.outputs.new_tag }}
           files: |
-            bin/picky-darwin-arm64
-            bin/picky-darwin-amd64
-            bin/picky-linux-arm64
-            bin/picky-linux-amd64
+            bin/icc-darwin-arm64
+            bin/icc-darwin-amd64
+            bin/icc-linux-arm64
+            bin/icc-linux-amd64
           generate_release_notes: true
 
       - name: Update Homebrew formula
@@ -119,4 +119,4 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $HOMEBREW_TAP_TOKEN" \
             https://api.github.com/repos/yepzdk/homebrew-tools/dispatches \
-            -d "{\"event_type\":\"update-picky\",\"client_payload\":{\"version\":\"$VERSION\"}}"
+            -d "{\"event_type\":\"update-icc\",\"client_payload\":{\"version\":\"$VERSION\"}}"

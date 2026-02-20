@@ -31,9 +31,9 @@ func TestBuildEnvSetsAllRequired(t *testing.T) {
 	env := BuildEnv("test-123", 41777)
 
 	required := map[string]bool{
-		"PICKY_SESSION_ID":         false,
-		"PICKY_PORT":               false,
-		"PICKY_HOME":               false,
+		"ICC_SESSION_ID":           false,
+		"ICC_PORT":                 false,
+		"ICC_HOME":                 false,
 		"CLAUDE_CODE_TASK_LIST_ID": false,
 	}
 

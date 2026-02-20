@@ -7,15 +7,15 @@ package config
 
 const (
 	// BinaryName is the CLI executable name.
-	BinaryName = "picky"
+	BinaryName = "icc"
 
 	// DisplayName is the human-readable product name used in banners and docs.
-	DisplayName = "Picky Claude"
+	DisplayName = "ITKdev Claude Code"
 
-	// EnvPrefix is prepended to environment variable names (e.g. PICKY_HOME).
-	EnvPrefix = "PICKY"
+	// EnvPrefix is prepended to environment variable names (e.g. ICC_HOME).
+	EnvPrefix = "ICC"
 
 	// ConfigDirName is the directory name under $HOME for storing data.
 	// Resolved to a full path by paths.go.
-	ConfigDirName = ".picky"
+	ConfigDirName = ".icc"
 )

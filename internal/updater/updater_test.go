@@ -16,7 +16,7 @@ func TestDownloadBinary(t *testing.T) {
 	defer srv.Close()
 
 	tmpDir := t.TempDir()
-	dest := filepath.Join(tmpDir, "picky")
+	dest := filepath.Join(tmpDir, "icc")
 
 	err := downloadBinary(srv.URL, dest)
 	if err != nil {
@@ -47,7 +47,7 @@ func TestDownloadBinary_ServerError(t *testing.T) {
 	defer srv.Close()
 
 	tmpDir := t.TempDir()
-	dest := filepath.Join(tmpDir, "picky")
+	dest := filepath.Join(tmpDir, "icc")
 
 	err := downloadBinary(srv.URL, dest)
 	if err == nil {

@@ -13,7 +13,7 @@ func stashIfDirty(repoDir string) (bool, error) {
 		return false, nil
 	}
 
-	cmd := exec.Command("git", "stash", "push", "-u", "-m", "picky: auto-stash before worktree create")
+	cmd := exec.Command("git", "stash", "push", "-u", "-m", "icc: auto-stash before worktree create")
 	cmd.Dir = repoDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return false, fmt.Errorf("git stash push: %w\n%s", err, out)

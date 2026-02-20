@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 func TestDeleteOldObservations(t *testing.T) {

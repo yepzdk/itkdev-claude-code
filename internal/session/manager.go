@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 )
 
 // counter ensures unique IDs even within the same process.
@@ -19,7 +19,7 @@ var counter atomic.Int64
 // NewID generates a unique session ID based on the current PID and a counter.
 func NewID() string {
 	n := counter.Add(1)
-	return fmt.Sprintf("picky-%d-%d", os.Getpid(), n)
+	return fmt.Sprintf("icc-%d-%d", os.Getpid(), n)
 }
 
 // EnsureSessionDir creates the session directory if it doesn't exist.

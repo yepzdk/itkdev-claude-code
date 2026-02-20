@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/console"
-	"github.com/jesperpedersen/picky-claude/internal/session"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/console"
+	"github.com/itk-dev/itkdev-claude-code/internal/session"
 	"github.com/spf13/cobra"
 )
 

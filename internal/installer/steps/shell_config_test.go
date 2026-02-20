@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
 )
 
 func TestShellConfig_Name(t *testing.T) {
@@ -33,8 +33,8 @@ func TestShellConfig_AddsToZshrc(t *testing.T) {
 	if !strings.Contains(content, "# existing config") {
 		t.Error("existing content should be preserved")
 	}
-	if !strings.Contains(content, pickyMarker) {
-		t.Error("expected picky marker in shell config")
+	if !strings.Contains(content, iccMarker) {
+		t.Error("expected icc marker in shell config")
 	}
 }
 
@@ -52,7 +52,7 @@ func TestShellConfig_Idempotent(t *testing.T) {
 
 	data, _ := os.ReadFile(zshrc)
 	// Should only have the marker once
-	count := strings.Count(string(data), pickyMarker)
+	count := strings.Count(string(data), iccMarker)
 	if count != 1 {
 		t.Errorf("expected marker to appear once, appeared %d times", count)
 	}

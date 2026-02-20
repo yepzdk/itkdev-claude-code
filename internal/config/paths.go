@@ -6,7 +6,7 @@ import (
 )
 
 // HomeDir returns the application's home directory.
-// Uses $PICKY_HOME if set, otherwise ~/.picky (derived from ConfigDirName).
+// Uses $ICC_HOME if set, otherwise ~/.icc (derived from ConfigDirName).
 func HomeDir() string {
 	if v := os.Getenv(EnvPrefix + "_HOME"); v != "" {
 		return v
@@ -25,7 +25,7 @@ func DBDir() string {
 
 // DBPath returns the path to the main SQLite database.
 func DBPath() string {
-	return filepath.Join(DBDir(), "picky.db")
+	return filepath.Join(DBDir(), "icc.db")
 }
 
 // SessionsDir returns the directory for session state files.

@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
-	"github.com/jesperpedersen/picky-claude/internal/session"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/session"
 	"github.com/spf13/cobra"
 )
 

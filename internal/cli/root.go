@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 	"github.com/spf13/cobra"
 )
 

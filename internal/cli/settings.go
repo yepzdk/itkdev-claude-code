@@ -8,13 +8,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jesperpedersen/picky-claude/internal/config"
+	"github.com/itk-dev/itkdev-claude-code/internal/config"
 	"github.com/spf13/cobra"
 )
 
-// pickyPermissions are the permissions picky adds to the global settings.
-var pickyPermissions = []string{
-	"Bash(picky *)",
+// iccPermissions are the permissions icc adds to the global settings.
+var iccPermissions = []string{
+	"Bash(icc *)",
 	"Skill(spec)",
 	"Skill(spec-plan)",
 	"Skill(spec-implement)",
@@ -28,13 +28,13 @@ var settingsCmd = &cobra.Command{
 
 var settingsInstallCmd = &cobra.Command{
 	Use:   "install",
-	Short: "Add Picky Claude entries to global Claude Code settings",
+	Short: "Add ITKdev Claude Code entries to global Claude Code settings",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := globalSettingsPath()
 		if err != nil {
 			return err
 		}
-		binPath := resolvePickyBinary()
+		binPath := resolveICCBinary()
 		cfg, err := config.Load()
 		if err != nil {
 			return err
@@ -49,7 +49,7 @@ var settingsInstallCmd = &cobra.Command{
 
 var settingsUninstallCmd = &cobra.Command{
 	Use:   "uninstall",
-	Short: "Remove Picky Claude entries from global Claude Code settings",
+	Short: "Remove ITKdev Claude Code entries from global Claude Code settings",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path, err := globalSettingsPath()
 		if err != nil {
@@ -78,7 +78,7 @@ func globalSettingsPath() (string, error) {
 	return filepath.Join(home, ".claude", "settings.json"), nil
 }
 
-// installGlobalSettings adds picky entries to the given settings file.
+// installGlobalSettings adds icc entries to the given settings file.
 // Creates the file and parent directory if they don't exist.
 // Preserves all existing entries.
 func installGlobalSettings(path string, binPath string, port int) error {
@@ -90,7 +90,7 @@ func installGlobalSettings(path string, binPath string, port int) error {
 	// Merge permissions
 	perms := ensureMap(settings, "permissions")
 	allow := getStringSlice(perms, "allow")
-	for _, p := range pickyPermissions {
+	for _, p := range iccPermissions {
 		if !containsStr(allow, p) {
 			allow = append(allow, p)
 		}
@@ -113,8 +113,8 @@ func installGlobalSettings(path string, binPath string, port int) error {
 	return writeJSONFile(path, settings)
 }
 
-// uninstallGlobalSettings removes picky entries from the given settings file.
-// Preserves all non-picky entries.
+// uninstallGlobalSettings removes icc entries from the given settings file.
+// Preserves all non-icc entries.
 func uninstallGlobalSettings(path string) error {
 	settings, err := readJSONFile(path)
 	if err != nil {
@@ -126,12 +126,12 @@ func uninstallGlobalSettings(path string) error {
 		return nil
 	}
 
-	// Remove picky permissions
+	// Remove icc permissions
 	if perms, ok := settings["permissions"].(map[string]any); ok {
 		allow := getStringSlice(perms, "allow")
 		var filtered []string
 		for _, p := range allow {
-			if !isPickyPermission(p) {
+			if !isICCPermission(p) {
 				filtered = append(filtered, p)
 			}
 		}
@@ -143,17 +143,17 @@ func uninstallGlobalSettings(path string) error {
 		settings["permissions"] = perms
 	}
 
-	// Remove statusLine if it's picky's
+	// Remove statusLine if it's icc's
 	if sl, ok := settings["statusLine"].(map[string]any); ok {
-		if cmd, ok := sl["command"].(string); ok && strings.Contains(cmd, "picky") {
+		if cmd, ok := sl["command"].(string); ok && strings.Contains(cmd, "icc") {
 			delete(settings, "statusLine")
 		}
 	}
 
-	// Remove companyAnnouncements if it's picky's
+	// Remove companyAnnouncements if it's icc's
 	if ann, ok := settings["companyAnnouncements"].([]any); ok {
 		if len(ann) > 0 {
-			if s, ok := ann[0].(string); ok && (strings.Contains(s, "picky") || strings.Contains(s, "/spec")) {
+			if s, ok := ann[0].(string); ok && (strings.Contains(s, "icc") || strings.Contains(s, "/spec")) {
 				delete(settings, "companyAnnouncements")
 			}
 		}
@@ -162,9 +162,9 @@ func uninstallGlobalSettings(path string) error {
 	return writeJSONFile(path, settings)
 }
 
-// isPickyPermission returns true if the permission string is one managed by picky.
-func isPickyPermission(p string) bool {
-	for _, pp := range pickyPermissions {
+// isICCPermission returns true if the permission string is one managed by icc.
+func isICCPermission(p string) bool {
+	for _, pp := range iccPermissions {
 		if p == pp {
 			return true
 		}
@@ -247,8 +247,8 @@ func containsStr(slice []string, s string) bool {
 	return false
 }
 
-// resolvePickyBinary returns the full path to the running picky binary.
-func resolvePickyBinary() string {
+// resolveICCBinary returns the full path to the running icc binary.
+func resolveICCBinary() string {
 	exe, err := os.Executable()
 	if err != nil {
 		return config.BinaryName

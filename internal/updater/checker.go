@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	defaultOwner = "jesperpedersen"
-	defaultRepo  = "picky-claude"
+	defaultOwner = "itk-dev"
+	defaultRepo  = "itkdev-claude-code"
 )
 
 // githubRelease is the JSON structure from the GitHub Releases API.

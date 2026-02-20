@@ -3,7 +3,7 @@ package context
 import (
 	"testing"
 
-	"github.com/jesperpedersen/picky-claude/internal/db"
+	"github.com/itk-dev/itkdev-claude-code/internal/db"
 )
 
 func TestBuildEmpty(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBuildWithBoth(t *testing.T) {
 	b := NewBuilder(4000)
 
 	obs := []*db.Observation{
-		{ID: 1, Type: "discovery", Title: "Config loading", Text: "YAML config is loaded from ~/.picky/"},
+		{ID: 1, Type: "discovery", Title: "Config loading", Text: "YAML config is loaded from ~/.icc/"},
 	}
 	summaries := []*db.Summary{
 		{ID: 1, SessionID: "s1", Text: "Refactored config system"},
