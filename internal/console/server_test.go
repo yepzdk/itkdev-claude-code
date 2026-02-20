@@ -87,6 +87,65 @@ func TestObservationRoundTrip(t *testing.T) {
 	}
 }
 
+func TestRecentObservations(t *testing.T) {
+	srv := testServer(t)
+
+	// Empty database returns empty list
+	rr := doRequest(t, srv, "GET", "/api/observations/recent", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rr.Code, http.StatusOK)
+	}
+
+	// Create some observations
+	for i := 0; i < 3; i++ {
+		doRequest(t, srv, "POST", "/api/observations", map[string]string{
+			"session_id": "s1",
+			"type":       "discovery",
+			"title":      fmt.Sprintf("obs %d", i),
+			"text":       fmt.Sprintf("text %d", i),
+			"project":    "proj",
+		})
+	}
+
+	// Fetch recent
+	rr = doRequest(t, srv, "GET", "/api/observations/recent", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var results []any
+	json.NewDecoder(rr.Body).Decode(&results)
+	if len(results) != 3 {
+		t.Errorf("got %d results, want 3", len(results))
+	}
+
+	// With limit
+	rr = doRequest(t, srv, "GET", "/api/observations/recent?limit=2", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d", rr.Code)
+	}
+	json.NewDecoder(rr.Body).Decode(&results)
+	if len(results) != 2 {
+		t.Errorf("got %d results with limit=2, want 2", len(results))
+	}
+
+	// With project filter
+	doRequest(t, srv, "POST", "/api/observations", map[string]string{
+		"session_id": "s1",
+		"type":       "feature",
+		"title":      "other proj obs",
+		"text":       "text",
+		"project":    "other",
+	})
+	rr = doRequest(t, srv, "GET", "/api/observations/recent?project=other", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d", rr.Code)
+	}
+	json.NewDecoder(rr.Body).Decode(&results)
+	if len(results) != 1 {
+		t.Errorf("got %d results with project=other, want 1", len(results))
+	}
+}
+
 func TestObservationNotFound(t *testing.T) {
 	srv := testServer(t)
 	rr := doRequest(t, srv, "GET", "/api/observations/99999", nil)

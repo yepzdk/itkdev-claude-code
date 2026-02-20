@@ -68,6 +68,19 @@ func (s *Server) handleGetObservation(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, obs)
 }
 
+func (s *Server) handleRecentObservations(w http.ResponseWriter, r *http.Request) {
+	limit := int(parseID(r.URL.Query().Get("limit")))
+	project := r.URL.Query().Get("project")
+
+	results, err := s.db.RecentObservations(project, limit)
+	if err != nil {
+		s.logger.Error("recent observations", "error", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal error"})
+		return
+	}
+	writeJSON(w, http.StatusOK, results)
+}
+
 func (s *Server) handleSearchObservations(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {
