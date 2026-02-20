@@ -173,13 +173,30 @@
       border: 1px solid #30363d; border-radius: 6px;
       margin-bottom: 0.5rem;
     }
+    .summary-card .summary-project {
+      font-weight: 600; font-size: 0.85rem; color: #c9d1d9;
+      margin-bottom: 0.375rem;
+    }
     .summary-card .summary-text {
       white-space: pre-wrap; word-break: break-word; line-height: 1.5;
     }
     .summary-card .summary-meta {
       margin-top: 0.5rem; color: #8b949e; font-size: 0.75rem;
-      display: flex; gap: 1rem;
+      display: flex; gap: 1rem; align-items: center;
     }
+    .summary-card .summary-meta a {
+      color: #58a6ff; text-decoration: none; cursor: pointer;
+    }
+    .summary-card .summary-meta a:hover { text-decoration: underline; }
+    .session-detail {
+      margin-top: 0.5rem; padding: 0.5rem 0.75rem;
+      background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+      font-size: 0.8rem; color: #8b949e;
+    }
+    .session-detail .detail-row {
+      display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.25rem;
+    }
+    .session-detail .detail-row:first-child { margin-top: 0; }
 
     /* Plan card */
     .plan-card {
@@ -309,8 +326,9 @@
         <!-- Summaries -->
         <div id="section-summaries" class="section">
           <div class="content-inner">
-            <div style="margin-bottom:1rem">
+            <div style="margin-bottom:1rem;display:flex;align-items:center;gap:0.75rem">
               <button class="btn btn-secondary" id="refresh-summaries">Refresh</button>
+              <span id="summaries-count" style="font-size:0.85rem;color:#8b949e"></span>
             </div>
             <div id="summaries-list">
               <div class="placeholder">Loading summaries...</div>
@@ -616,27 +634,81 @@
 
     // --- Summaries ---
     const summariesList = document.getElementById('summaries-list');
+    const summariesCount = document.getElementById('summaries-count');
     document.getElementById('refresh-summaries').addEventListener('click', loadSummaries);
+
+    async function fetchSessionDetail(sessionId, container) {
+      if (container.dataset.loaded === 'true') {
+        container.style.display = container.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      container.innerHTML = 'Loading session...';
+      container.style.display = 'block';
+      try {
+        const resp = await fetch('/api/sessions/' + encodeURIComponent(sessionId));
+        if (!resp.ok) {
+          container.innerHTML = 'Session not found.';
+          container.dataset.loaded = 'true';
+          return;
+        }
+        const sess = await resp.json();
+        const ended = sess.EndedAt
+          ? '<span class="badge badge-ended">ended</span>'
+          : '<span class="badge badge-active">active</span>';
+        container.innerHTML =
+          '<div class="detail-row">' + ended +
+            '<span>Messages: ' + (sess.MessageCount || 0) + '</span>' +
+            '<span>Started: ' + fmtTime(sess.StartedAt) + '</span>' +
+            (sess.EndedAt ? '<span>Ended: ' + fmtTime(sess.EndedAt) + '</span>' : '') +
+          '</div>' +
+          '<div class="detail-row" style="margin-top:0.25rem">' +
+            '<span style="font-family:monospace;font-size:0.75rem;color:#8b949e;word-break:break-all">' + esc(sess.ID) + '</span>' +
+          '</div>';
+        container.dataset.loaded = 'true';
+      } catch (err) {
+        container.innerHTML = 'Failed to load session.';
+        console.error('Session detail error:', err);
+      }
+    }
 
     async function loadSummaries() {
       summariesList.innerHTML = '<div class="placeholder">Loading summaries...</div>';
+      summariesCount.textContent = '';
       try {
         const resp = await fetch('/api/summaries/recent?limit=20');
         const summaries = await resp.json();
         if (!summaries || summaries.length === 0) {
           summariesList.innerHTML = '<div class="placeholder">No summaries yet.</div>';
+          summariesCount.textContent = '';
           return;
         }
         summariesList.innerHTML = '';
+        summariesCount.textContent = summaries.length + ' summar' + (summaries.length !== 1 ? 'ies' : 'y');
         for (const s of summaries) {
           const div = document.createElement('div');
           div.className = 'summary-card';
+
+          const projectLine = s.Project
+            ? '<div class="summary-project">' + esc(s.Project) + '</div>'
+            : '';
+          const detailId = 'session-detail-' + s.ID;
           div.innerHTML =
+            projectLine +
             '<div class="summary-text">' + esc(s.Text) + '</div>' +
             '<div class="summary-meta">' +
-              '<span>Session: ' + esc(fmtShortId(s.SessionID)) + '</span>' +
+              '<span>Session: <a data-session="' + esc(s.SessionID) + '" data-detail="' + detailId + '" title="' + esc(s.SessionID) + '">' + esc(fmtShortId(s.SessionID)) + '</a></span>' +
               '<span>' + fmtTime(s.CreatedAt) + '</span>' +
-            '</div>';
+            '</div>' +
+            '<div class="session-detail" id="' + detailId + '" style="display:none"></div>';
+
+          const link = div.querySelector('a[data-session]');
+          link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sessionId = this.dataset.session;
+            const detail = document.getElementById(this.dataset.detail);
+            fetchSessionDetail(sessionId, detail);
+          });
+
           summariesList.appendChild(div);
         }
       } catch (err) {

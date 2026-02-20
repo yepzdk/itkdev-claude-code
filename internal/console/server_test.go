@@ -304,6 +304,32 @@ func TestSummaryRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSummaryWithProject(t *testing.T) {
+	srv := testServer(t)
+
+	// Create session with project
+	doRequest(t, srv, "POST", "/api/sessions", map[string]string{
+		"id": "sess-proj", "project": "myproject",
+	})
+	doRequest(t, srv, "POST", "/api/summaries", map[string]string{
+		"session_id": "sess-proj", "text": "built the feature",
+	})
+
+	rr := doRequest(t, srv, "GET", "/api/summaries/recent", nil)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+	var summaries []map[string]any
+	json.NewDecoder(rr.Body).Decode(&summaries)
+	if len(summaries) != 1 {
+		t.Fatalf("got %d summaries, want 1", len(summaries))
+	}
+	project, _ := summaries[0]["Project"].(string)
+	if project != "myproject" {
+		t.Errorf("Project = %q, want myproject", project)
+	}
+}
+
 func TestContextInject(t *testing.T) {
 	srv := testServer(t)
 

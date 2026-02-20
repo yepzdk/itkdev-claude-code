@@ -391,6 +391,55 @@ func TestSummaryCRUD(t *testing.T) {
 	}
 }
 
+func TestSummaryWithProject(t *testing.T) {
+	db := testDB(t)
+
+	// Create sessions with projects
+	db.InsertSession(&Session{ID: "sess-1", Project: "backend", Metadata: "{}"})
+	db.InsertSession(&Session{ID: "sess-2", Project: "frontend", Metadata: "{}"})
+
+	db.InsertSummary(&Summary{SessionID: "sess-1", Text: "Built API endpoints"})
+	db.InsertSummary(&Summary{SessionID: "sess-2", Text: "Styled login page"})
+
+	summaries, err := db.RecentSummaries(10)
+	if err != nil {
+		t.Fatalf("RecentSummaries: %v", err)
+	}
+	if len(summaries) != 2 {
+		t.Fatalf("got %d summaries, want 2", len(summaries))
+	}
+
+	// Check both projects are present (order may vary when timestamps are identical)
+	projects := map[string]bool{}
+	for _, s := range summaries {
+		projects[s.Project] = true
+	}
+	if !projects["backend"] {
+		t.Error("missing project 'backend' in summaries")
+	}
+	if !projects["frontend"] {
+		t.Error("missing project 'frontend' in summaries")
+	}
+}
+
+func TestSummaryWithoutSession(t *testing.T) {
+	db := testDB(t)
+
+	// Summary with a session_id that has no matching session row
+	db.InsertSummary(&Summary{SessionID: "orphan-sess", Text: "Orphan summary"})
+
+	summaries, err := db.RecentSummaries(10)
+	if err != nil {
+		t.Fatalf("RecentSummaries: %v", err)
+	}
+	if len(summaries) != 1 {
+		t.Fatalf("got %d summaries, want 1", len(summaries))
+	}
+	if summaries[0].Project != "" {
+		t.Errorf("expected empty project for orphan summary, got %q", summaries[0].Project)
+	}
+}
+
 func TestPlanCRUD(t *testing.T) {
 	db := testDB(t)
 
