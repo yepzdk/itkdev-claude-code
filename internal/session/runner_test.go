@@ -28,7 +28,7 @@ func TestBuildClaudeArgs(t *testing.T) {
 }
 
 func TestBuildEnvSetsAllRequired(t *testing.T) {
-	env := BuildEnv("test-123", 41777)
+	env := BuildEnv("test-123", 41777, "")
 
 	required := map[string]bool{
 		"ICC_SESSION_ID":           false,

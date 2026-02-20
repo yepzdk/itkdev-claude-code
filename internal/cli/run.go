@@ -13,9 +13,13 @@ import (
 
 	"github.com/itk-dev/itkdev-claude-code/internal/config"
 	"github.com/itk-dev/itkdev-claude-code/internal/console"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer"
+	"github.com/itk-dev/itkdev-claude-code/internal/installer/steps"
 	"github.com/itk-dev/itkdev-claude-code/internal/session"
 	"github.com/spf13/cobra"
 )
+
+var issueFlag string
 
 var runCmd = &cobra.Command{
 	Use:   "run",
@@ -33,6 +37,14 @@ background goroutine for the lifetime of the session.`,
 		logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 			Level: cfg.LogLevel,
 		}))
+
+		// Auto-install if project is not set up
+		if err := autoInstallIfNeeded(logger); err != nil {
+			return fmt.Errorf("auto-install failed: %w", err)
+		}
+
+		// Check for required plugins
+		checkRequiredPlugins(logger)
 
 		// Find Claude Code
 		claudePath, err := session.FindClaudeCode()
@@ -87,7 +99,7 @@ background goroutine for the lifetime of the session.`,
 		})
 
 		// Build environment for Claude Code
-		env := session.BuildEnv(sessionID, actualPort)
+		env := session.BuildEnv(sessionID, actualPort, issueFlag)
 
 		// Launch Claude Code
 		claudeArgs := session.BuildClaudeArgs()
@@ -222,6 +234,61 @@ func updateMCPPort(path string, port int, logger *slog.Logger) {
 	}
 }
 
+// autoInstallIfNeeded detects if the project hasn't been set up yet (missing
+// .claude/settings.json) and runs the installer automatically.
+func autoInstallIfNeeded(logger *slog.Logger) error {
+	settingsPath := filepath.Join(".claude", "settings.json")
+	if _, err := os.Stat(settingsPath); err == nil {
+		return nil // Already set up
+	}
+
+	fmt.Fprintln(os.Stderr, "Project not set up — running installer automatically...")
+	fmt.Fprintln(os.Stderr)
+
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	installSteps := []installer.Step{
+		&steps.Prerequisites{},
+		&steps.Dependencies{},
+		&steps.ShellConfig{},
+		&steps.ClaudeFiles{},
+		&steps.ConfigFiles{},
+		&steps.Plugins{},
+		&steps.VSCode{},
+		&steps.Finalize{},
+	}
+
+	inst := installer.New(dir, installSteps...)
+	result := inst.RunWithUI(os.Stderr)
+
+	if !result.Success {
+		return fmt.Errorf("installer failed at step %q: %w", result.FailedStep, result.Error)
+	}
+
+	logger.Debug("auto-install completed successfully")
+	return nil
+}
+
+// checkRequiredPlugins warns on stderr if any required Claude Code plugins
+// are not installed. This is a non-blocking check — it never prevents launch.
+func checkRequiredPlugins(logger *slog.Logger) {
+	missing, err := config.MissingPlugins()
+	if err != nil {
+		logger.Debug("could not check plugins", "error", err)
+		return
+	}
+	for _, req := range missing {
+		fmt.Fprintf(os.Stderr, "⚠ Required plugin %q is not installed.\n", req.Name)
+		fmt.Fprintf(os.Stderr, "  Install it in Claude Code with:\n")
+		fmt.Fprintf(os.Stderr, "    /plugin marketplace add itk-dev/itkdev-claude-plugins\n")
+		fmt.Fprintf(os.Stderr, "    /plugin install %s@%s\n\n", req.Name, req.Marketplace)
+	}
+}
+
 func init() {
+	runCmd.Flags().StringVar(&issueFlag, "issue", "", "GitHub issue number to work on (sets ICC_ISSUE_ID)")
 	rootCmd.AddCommand(runCmd)
 }

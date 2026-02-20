@@ -63,13 +63,17 @@ func ReadContextPercentage(sessionDir string) (float64, error) {
 
 // BuildEnv constructs the environment variables that should be set when
 // launching Claude Code. It inherits the current process environment and
-// adds/overrides session-specific variables.
-func BuildEnv(sessionID string, port int) []string {
+// adds/overrides session-specific variables. Optional issueID sets
+// ICC_ISSUE_ID when launching a session for a specific GitHub issue.
+func BuildEnv(sessionID string, port int, issueID string) []string {
 	env := os.Environ()
 	env = setEnv(env, config.EnvPrefix+"_SESSION_ID", sessionID)
 	env = setEnv(env, config.EnvPrefix+"_PORT", strconv.Itoa(port))
 	env = setEnv(env, config.EnvPrefix+"_HOME", config.HomeDir())
 	env = setEnv(env, "CLAUDE_CODE_TASK_LIST_ID", config.BinaryName+"-"+sessionID)
+	if issueID != "" {
+		env = setEnv(env, config.EnvPrefix+"_ISSUE_ID", issueID)
+	}
 	return env
 }
 
